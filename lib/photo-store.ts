@@ -7,6 +7,7 @@ export interface PhotoItem {
   src: string
   alt: string
   title: string
+  isCustom?: boolean
   x: number // 0 to 100%
   y: number // 0 to 100%
   zoom: number // 1.0 to 2.5
@@ -20,7 +21,7 @@ export interface PhotoState {
   intervalSeconds: number
 }
 
-const DEFAULT_PHOTOS: PhotoItem[] = [
+export const DEFAULT_PHOTOS: PhotoItem[] = [
   {
     id: '1',
     src: '/images/photo-1.jpg',
@@ -66,7 +67,29 @@ const DEFAULT_PHOTOS: PhotoItem[] = [
     y: 45,
     zoom: 1.0,
   },
+  {
+    id: '6',
+    src: '/images/photo-6.jpg',
+    alt: 'Stage profile smile',
+    title: 'Stage Profile',
+    x: 50,
+    y: 30,
+    zoom: 1.1,
+  },
+  {
+    id: '7',
+    src: '/images/photo-7.jpg',
+    alt: 'City lights atmosphere',
+    title: 'City Lights',
+    x: 60,
+    y: 40,
+    zoom: 1.15,
+  },
 ]
+
+const STORAGE_KEY_SLOTS = 'desktop_photo_slots_v3'
+const STORAGE_KEY_INTERVAL = 'desktop_photo_interval_v3'
+const STORAGE_KEY_AUTOROTATE = 'desktop_photo_autorotate_v3'
 
 let state: PhotoState = {
   photos: DEFAULT_PHOTOS,
@@ -85,24 +108,40 @@ function emitChange() {
   }
 }
 
+function persistPhotos() {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY_SLOTS, JSON.stringify(state.photos))
+  } catch {
+    // ignore
+  }
+}
+
 function loadInitialState() {
   if (isInitialized || typeof window === 'undefined') return
   isInitialized = true
   try {
-    const saved = localStorage.getItem('desktop_photo_crops_v2')
-    const savedInterval = localStorage.getItem('desktop_photo_interval_v2')
-    const savedAuto = localStorage.getItem('desktop_photo_autorotate_v2')
+    const saved = localStorage.getItem(STORAGE_KEY_SLOTS)
+    const savedInterval = localStorage.getItem(STORAGE_KEY_INTERVAL)
+    const savedAuto = localStorage.getItem(STORAGE_KEY_AUTOROTATE)
 
     let nextPhotos = DEFAULT_PHOTOS
     if (saved) {
       const parsed = JSON.parse(saved)
-      if (Array.isArray(parsed) && parsed.length === DEFAULT_PHOTOS.length) {
-        nextPhotos = DEFAULT_PHOTOS.map((p, i) => ({
-          ...p,
-          x: parsed[i]?.x ?? p.x,
-          y: parsed[i]?.y ?? p.y,
-          zoom: parsed[i]?.zoom ?? p.zoom,
-        }))
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        nextPhotos = DEFAULT_PHOTOS.map((def, i) => {
+          const item = parsed[i]
+          if (!item) return def
+          return {
+            ...def,
+            src: item.src || def.src,
+            title: item.title || def.title,
+            isCustom: Boolean(item.isCustom),
+            x: typeof item.x === 'number' ? item.x : def.x,
+            y: typeof item.y === 'number' ? item.y : def.y,
+            zoom: typeof item.zoom === 'number' ? item.zoom : def.zoom,
+          }
+        })
       }
     }
 
@@ -156,13 +195,7 @@ export const photoStore = {
   updateCrop: (idx: number, partial: { x?: number; y?: number; zoom?: number }) => {
     const updated = state.photos.map((p, i) => (i === idx ? { ...p, ...partial } : p))
     state = { ...state, photos: updated }
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('desktop_photo_crops_v2', JSON.stringify(updated))
-      } catch {
-        // ignore
-      }
-    }
+    persistPhotos()
     emitChange()
   },
   resetCrop: (idx: number) => {
@@ -170,11 +203,43 @@ export const photoStore = {
     if (!def) return
     photoStore.updateCrop(idx, { x: def.x, y: def.y, zoom: def.zoom })
   },
+  uploadPhoto: (idx: number, dataUrl: string, title?: string) => {
+    const updated = state.photos.map((p, i) => {
+      if (i === idx) {
+        return {
+          ...p,
+          src: dataUrl,
+          isCustom: true,
+          title: title || `Custom Photo ${idx + 1}`,
+          x: 50,
+          y: 50,
+          zoom: 1.0,
+        }
+      }
+      return p
+    })
+    state = { ...state, photos: updated }
+    persistPhotos()
+    emitChange()
+  },
+  resetPhotoToDefault: (idx: number) => {
+    const def = DEFAULT_PHOTOS[idx]
+    if (!def) return
+    const updated = state.photos.map((p, i) => (i === idx ? { ...def } : p))
+    state = { ...state, photos: updated }
+    persistPhotos()
+    emitChange()
+  },
+  resetAllPhotosToDefault: () => {
+    state = { ...state, photos: DEFAULT_PHOTOS }
+    persistPhotos()
+    emitChange()
+  },
   setIntervalSeconds: (sec: number) => {
     state = { ...state, intervalSeconds: sec }
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('desktop_photo_interval_v2', String(sec))
+        localStorage.setItem(STORAGE_KEY_INTERVAL, String(sec))
       } catch {
         // ignore
       }
@@ -186,7 +251,7 @@ export const photoStore = {
     state = { ...state, autoRotate: next }
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('desktop_photo_autorotate_v2', String(next))
+        localStorage.setItem(STORAGE_KEY_AUTOROTATE, String(next))
       } catch {
         // ignore
       }
@@ -205,4 +270,41 @@ export function usePhotoStore() {
     photoStore.getState,
     () => state
   )
+}
+
+export function processImageFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const MAX_DIM = 1200
+        let { width, height } = img
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width)
+            width = MAX_DIM
+          } else {
+            width = Math.round((width * MAX_DIM) / height)
+            height = MAX_DIM
+          }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(e.target?.result as string)
+          return
+        }
+        ctx.drawImage(img, 0, 0, width, height)
+        const compressed = canvas.toDataURL('image/jpeg', 0.88)
+        resolve(compressed)
+      }
+      img.onerror = () => resolve(e.target?.result as string)
+      img.src = e.target?.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }

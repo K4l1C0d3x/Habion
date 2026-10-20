@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import {
-  Crop,
   RotateCcw,
   Check,
   ChevronLeft,
@@ -10,14 +9,27 @@ import {
   Play,
   Pause,
   Image as ImageIcon,
+  Upload,
   Sparkles,
 } from 'lucide-react'
-import { usePhotoStore, photoStore } from '@/lib/photo-store'
+import { usePhotoStore, photoStore, processImageFile } from '@/lib/photo-store'
 
 export function PhotosAppWindow() {
   const { photos, currentIndex, isAppOpen, autoRotate, intervalSeconds } = usePhotoStore()
   const [isMaximized, setIsMaximized] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [targetSlot, setTargetSlot] = useState<number>(0)
+  const [customSecInput, setCustomSecInput] = useState<string>(
+    [3, 5, 10, 15].includes(intervalSeconds) ? '' : String(intervalSeconds)
+  )
   const windowRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (![3, 5, 10, 15].includes(intervalSeconds)) {
+      setCustomSecInput(String(intervalSeconds))
+    }
+  }, [intervalSeconds])
 
   // Escape key to close
   useEffect(() => {
@@ -30,12 +42,55 @@ export function PhotosAppWindow() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isAppOpen])
 
+  function triggerUpload(slotIdx?: number) {
+    setTargetSlot(typeof slotIdx === 'number' ? slotIdx : currentIndex)
+    fileInputRef.current?.click()
+  }
+
+  async function handleFileSelected(file: File, slot: number) {
+    setIsUploading(true)
+    try {
+      const dataUrl = await processImageFile(file)
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').slice(0, 24)
+      photoStore.uploadPhoto(slot, dataUrl, cleanName)
+      photoStore.setCurrentIndex(slot)
+    } catch (err) {
+      console.error('Failed to process image file:', err)
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    await handleFileSelected(file, targetSlot)
+  }
+
+  async function handleDropOnPreview(e: React.DragEvent) {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      await handleFileSelected(file, currentIndex)
+    }
+  }
+
   if (!isAppOpen) return null
 
   const current = photos[currentIndex] || photos[0]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/35 backdrop-blur-[2px] animate-in fade-in duration-200 select-none">
+      {/* Hidden File Input for Image Upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileInputChange}
+        className="hidden"
+      />
+
       {/* Background click to dismiss */}
       <div
         className="absolute inset-0"
@@ -48,8 +103,8 @@ export function PhotosAppWindow() {
         ref={windowRef}
         className={`relative z-10 flex flex-col overflow-hidden rounded-2xl border border-black/10 bg-card text-card-foreground shadow-[0_25px_50px_-12px_rgb(0_0_0/0.3),0_0_0_1px_rgb(0_0_0/0.05)] transition-all duration-300 ${
           isMaximized
-            ? 'h-[88vh] w-[92vw] max-w-5xl'
-            : 'h-[580px] max-h-[92vh] w-full max-w-2xl'
+            ? 'h-[90vh] w-[94vw] max-w-5xl'
+            : 'h-[620px] max-h-[94vh] w-full max-w-2xl'
         }`}
       >
         {/* macOS Title Bar */}
@@ -85,10 +140,10 @@ export function PhotosAppWindow() {
             <span>Photos & Framing Studio</span>
           </div>
 
-          {/* Slideshow Status Pill */}
+          {/* Slots Count Pill */}
           <div className="flex items-center gap-1.5 rounded-lg bg-muted/60 px-2.5 py-1 text-[11px] text-muted-foreground">
             <span className="font-semibold text-foreground">
-              {currentIndex + 1} of {photos.length}
+              Slot {currentIndex + 1} of {photos.length}
             </span>
           </div>
         </div>
@@ -98,8 +153,14 @@ export function PhotosAppWindow() {
           {/* Top Preview & Crop Canvas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-center">
             {/* Live Widget Preview Square */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="relative size-52 sm:size-56 overflow-hidden rounded-3xl border-2 border-signal shadow-lg bg-black/10">
+            <div className="flex flex-col items-center gap-2.5">
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDropOnPreview}
+                title="Drag & drop any photo file here to upload"
+                className="group relative size-52 sm:size-56 overflow-hidden rounded-3xl border-2 border-signal shadow-lg bg-black/10 cursor-pointer"
+                onClick={() => triggerUpload(currentIndex)}
+              >
                 <img
                   src={current.src}
                   alt={current.alt}
@@ -112,6 +173,7 @@ export function PhotosAppWindow() {
                     transformOrigin: `${current.x}% ${current.y}%`,
                   }}
                 />
+
                 {/* Rule of Thirds Guide Lines */}
                 <div className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3 border border-white/20">
                   <div className="border-r border-b border-white/15" />
@@ -121,20 +183,61 @@ export function PhotosAppWindow() {
                   <div className="border-r border-b border-white/15" />
                   <div className="border-b border-white/15" />
                   <div className="border-r border-b border-white/15" />
-                  <div className="border-r border-white/15" />
+                  <div className="border-r border-b border-white/15" />
                   <div />
                 </div>
+
+                {/* Upload Overlay on Hover */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[1px]">
+                  <Upload className="size-6 stroke-[2]" />
+                  <span className="text-[11px] font-bold">Click or Drop Picture</span>
+                </div>
               </div>
-              <p className="text-xs font-semibold text-foreground text-center">
-                {current.title}
-              </p>
+
+              {/* Title and Upload/Reset Actions */}
+              <div className="flex flex-col items-center gap-1.5 w-full">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-foreground text-center truncate max-w-[180px]">
+                    {current.title}
+                  </p>
+                  {current.isCustom && (
+                    <span className="rounded-full bg-signal/15 text-signal text-[9px] font-bold px-1.5 py-0.2">
+                      Custom
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => triggerUpload(currentIndex)}
+                    disabled={isUploading}
+                    className="flex items-center gap-1 rounded-xl bg-signal px-3 py-1 text-xs font-bold text-white shadow-xs hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Upload className="size-3 stroke-[2.5]" />
+                    <span>{isUploading ? 'Uploading…' : 'Upload to Slot ' + (currentIndex + 1)}</span>
+                  </button>
+
+                  {current.isCustom && (
+                    <button
+                      type="button"
+                      onClick={() => photoStore.resetPhotoToDefault(currentIndex)}
+                      title="Reset this slot to original default image"
+                      className="flex items-center gap-1 rounded-xl border border-border bg-muted/60 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                    >
+                      <RotateCcw className="size-3" />
+                      <span>Default</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Crop Sliders for the Active Image */}
             <div className="flex flex-col gap-3 rounded-2xl border border-border bg-muted/20 p-4 text-xs">
               <div className="flex items-center justify-between pb-1 border-b border-border/60">
                 <span className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">
-                  Crop Adjustments
+                  Crop Adjustments (Slot {currentIndex + 1})
                 </span>
                 <button
                   type="button"
@@ -218,11 +321,11 @@ export function PhotosAppWindow() {
             </div>
           </div>
 
-          {/* Next Image Crop Selector Strip */}
+          {/* 7 Slots Selector Strip */}
           <div className="flex flex-col gap-2 rounded-2xl border border-border bg-muted/20 p-4">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                Select Photo to Crop ({photos.length} photos)
+                Photo Slots ({photos.length} Total Slots)
               </span>
 
               {/* Previous / Next buttons */}
@@ -246,8 +349,8 @@ export function PhotosAppWindow() {
               </div>
             </div>
 
-            {/* 5 Thumbnails Grid */}
-            <div className="grid grid-cols-5 gap-2.5 pt-1">
+            {/* 7 Thumbnails Grid */}
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 pt-1">
               {photos.map((p, idx) => {
                 const isSelected = idx === currentIndex
                 return (
@@ -255,13 +358,13 @@ export function PhotosAppWindow() {
                     key={p.id}
                     type="button"
                     onClick={() => photoStore.setCurrentIndex(idx)}
-                    className={`group flex flex-col items-center gap-1.5 rounded-xl p-1.5 border-2 transition-all cursor-pointer ${
+                    className={`group relative flex flex-col items-center gap-1 rounded-xl p-1.5 border-2 transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-signal bg-signal/10 shadow-sm scale-102'
+                        ? 'border-signal bg-signal/10 shadow-sm scale-102 ring-2 ring-signal/30'
                         : 'border-border/80 bg-card hover:border-foreground/30'
                     }`}
                   >
-                    <div className="relative aspect-square w-full overflow-hidden rounded-lg">
+                    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted/50">
                       <img
                         src={p.src}
                         alt={p.alt}
@@ -272,13 +375,18 @@ export function PhotosAppWindow() {
                           <Check className="size-2.5 stroke-[3]" />
                         </div>
                       )}
+                      {p.isCustom && (
+                        <div className="absolute bottom-1 left-1 flex size-3.5 items-center justify-center rounded-full bg-black/60 text-white shadow-xs">
+                          <Sparkles className="size-2 fill-current" />
+                        </div>
+                      )}
                     </div>
                     <span
                       className={`truncate text-[10px] font-medium w-full text-center ${
                         isSelected ? 'text-signal font-bold' : 'text-muted-foreground'
                       }`}
                     >
-                      Photo {idx + 1}
+                      Slot {idx + 1}
                     </span>
                   </button>
                 )
@@ -291,43 +399,83 @@ export function PhotosAppWindow() {
             <div>
               <p className="font-semibold text-foreground">Widget Auto-Slide Speed</p>
               <p className="text-[11px] text-muted-foreground">
-                How often the desktop photo widget cycles to the next image
+                Cycles across all 7 photo slots on the desktop widget
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              {[3, 5, 10, 15].map((sec) => (
-                <button
-                  key={sec}
-                  type="button"
-                  onClick={() => photoStore.setIntervalSeconds(sec)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    intervalSeconds === sec && autoRotate
-                      ? 'bg-foreground text-background shadow-xs'
-                      : 'bg-card border border-border text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {sec}s
-                </button>
-              ))}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Presets: 3s, 5s, 10s, 15s - they STICK regardless of pause state */}
+              {[3, 5, 10, 15].map((sec) => {
+                const isSelected = intervalSeconds === sec
+                return (
+                  <button
+                    key={sec}
+                    type="button"
+                    onClick={() => {
+                      photoStore.setIntervalSeconds(sec)
+                      setCustomSecInput('')
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-foreground text-background shadow-xs ring-2 ring-foreground/20 scale-102'
+                        : 'bg-card border border-border text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {sec}s
+                  </button>
+                )
+              })}
 
+              {/* Custom Seconds Input */}
+              <div
+                className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold border transition-all ${
+                  ![3, 5, 10, 15].includes(intervalSeconds)
+                    ? 'bg-foreground text-background shadow-xs ring-2 ring-foreground/20 border-foreground'
+                    : 'bg-card border border-border text-muted-foreground'
+                }`}
+              >
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">Custom:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={300}
+                  value={customSecInput}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setCustomSecInput(val)
+                    const num = parseInt(val, 10)
+                    if (!isNaN(num) && num > 0) {
+                      photoStore.setIntervalSeconds(num)
+                    }
+                  }}
+                  placeholder="sec"
+                  className={`w-9 bg-transparent text-center font-bold outline-none text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                    ![3, 5, 10, 15].includes(intervalSeconds)
+                      ? 'text-background placeholder:text-background/60'
+                      : 'text-foreground'
+                  }`}
+                />
+                <span className="font-bold">s</span>
+              </div>
+
+              {/* Play / Paused Toggle with stable fixed width so it never moves when clicked */}
               <button
                 type="button"
                 onClick={() => photoStore.toggleAutoRotate()}
-                className={`flex items-center gap-1.5 rounded-xl px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex w-24 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shadow-xs ${
                   autoRotate
-                    ? 'bg-foreground text-background'
-                    : 'bg-signal text-white'
+                    ? 'bg-foreground text-background hover:opacity-90'
+                    : 'bg-signal text-white hover:opacity-90'
                 }`}
               >
                 {autoRotate ? (
                   <>
-                    <Pause className="size-3 fill-current" />
+                    <Play className="size-3 fill-current" />
                     <span>Auto</span>
                   </>
                 ) : (
                   <>
-                    <Play className="size-3 fill-current" />
+                    <Pause className="size-3 fill-current" />
                     <span>Paused</span>
                   </>
                 )}

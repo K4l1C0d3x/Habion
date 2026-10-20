@@ -12,8 +12,11 @@ const FORECAST = [
 
 export function WeatherWidget() {
   return (
-    <section aria-label="Madrid weekly forecast" className="widget flex w-full flex-col gap-4 p-5">
-      <h2 className="text-[13px] font-medium">Madrid</h2>
+    <section aria-label="Madrid weekly forecast" className="widget flex w-full flex-col gap-3.5 p-4 select-none">
+      <div className="flex items-center justify-between">
+        <h2 className="text-[13px] font-semibold text-foreground">Madrid</h2>
+        <span className="text-[10px] font-medium text-muted-foreground">Weekly Forecast</span>
+      </div>
       <ul className="grid grid-cols-7 text-center text-[11px]">
         {FORECAST.map((f) => (
           <li key={f.day} className="flex flex-col items-center gap-2">

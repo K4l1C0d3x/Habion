@@ -1,14 +1,60 @@
 'use client'
 
-import { Pause, Play, SkipBack, SkipForward } from 'lucide-react'
+import { Pause, Play, SkipBack, SkipForward, Volume2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-const TRACKS = [
-  { title: 'Psycho Killer', artist: 'Talking Heads', album: 'Talking Heads: 77' },
-  { title: 'Once in a Lifetime', artist: 'Talking Heads', album: 'Remain in Light' },
-  { title: 'This Must Be the Place', artist: 'Talking Heads', album: 'Speaking in Tongues' },
+interface Track {
+  title: string
+  artist: string
+  album: string
+  cover: string
+  duration: number
+}
+
+const TRACKS: Track[] = [
+  {
+    title: 'Escape from LA',
+    artist: 'The Weeknd',
+    album: 'After Hours',
+    cover: '/images/after-hours.jpg',
+    duration: 356, // 5:56
+  },
+  {
+    title: 'Heartless',
+    artist: 'The Weeknd',
+    album: 'After Hours',
+    cover: '/images/after-hours.jpg',
+    duration: 198, // 3:18
+  },
+  {
+    title: 'Blinding Lights',
+    artist: 'The Weeknd',
+    album: 'After Hours',
+    cover: '/images/after-hours.jpg',
+    duration: 200, // 3:20
+  },
+  {
+    title: 'After Hours',
+    artist: 'The Weeknd',
+    album: 'After Hours',
+    cover: '/images/after-hours.jpg',
+    duration: 361, // 6:01
+  },
+  {
+    title: 'In Your Eyes',
+    artist: 'The Weeknd',
+    album: 'After Hours',
+    cover: '/images/after-hours.jpg',
+    duration: 237, // 3:57
+  },
+  {
+    title: 'Save Your Tears',
+    artist: 'The Weeknd',
+    album: 'After Hours',
+    cover: '/images/after-hours.jpg',
+    duration: 215, // 3:35
+  },
 ]
-const DURATION = 30
 
 function format(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
@@ -19,12 +65,13 @@ export function MusicWidget() {
   const [elapsed, setElapsed] = useState(0)
   const [playing, setPlaying] = useState(false)
   const track = TRACKS[index]
+  const duration = track.duration
 
   useEffect(() => {
     if (!playing) return
     const id = setInterval(() => {
       setElapsed((e) => {
-        if (e + 1 >= DURATION) {
+        if (e + 1 >= duration) {
           setIndex((i) => (i + 1) % TRACKS.length)
           return 0
         }
@@ -32,74 +79,101 @@ export function MusicWidget() {
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [playing])
+  }, [playing, duration])
 
   const skip = (dir: 1 | -1) => {
     setIndex((i) => (i + dir + TRACKS.length) % TRACKS.length)
     setElapsed(0)
   }
 
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    setElapsed(Math.round(pct * duration))
+  }
+
   return (
-    <div className="widget flex w-full flex-col gap-4 p-5">
+    <div className="widget group/music flex w-full flex-col gap-4 p-5 select-none">
       <div className="flex items-start gap-4">
+        {/* Album Cover Art */}
         <div
           aria-hidden="true"
-          className="flex aspect-square w-[90px] shrink-0 items-start overflow-hidden rounded-lg bg-album p-1 shadow-sm"
+          className="relative flex aspect-square w-[90px] shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-md border border-black/10 dark:border-white/10 bg-black"
         >
-          <span className="font-serif text-[10px] leading-none font-bold whitespace-nowrap text-album-ink italic">
-            {track.album.toUpperCase()}
-          </span>
+          <img
+            src={track.cover}
+            alt={`${track.album} by ${track.artist}`}
+            draggable={false}
+            className="size-full object-cover transition-transform duration-500 group-hover/music:scale-105"
+          />
         </div>
-        <div className="flex min-w-0 flex-col gap-1 pt-1">
-          <p className="truncate font-semibold">{track.title}</p>
-          <p className="truncate text-[13px] text-muted-foreground">
+
+        {/* Track Metadata & Controls */}
+        <div className="flex min-w-0 flex-1 flex-col gap-1 pt-0.5">
+          <p className="truncate text-sm font-bold text-foreground tracking-tight">
+            {track.title}
+          </p>
+          <p className="truncate text-[12px] font-medium text-muted-foreground">
             {track.artist} {'—'} {track.album}
           </p>
-          <div className="mt-2 flex items-center gap-6">
+
+          {/* Player Playback Controls */}
+          <div className="mt-2.5 flex items-center gap-5">
             <button
               type="button"
               onClick={() => skip(-1)}
+              onPointerDown={(e) => e.stopPropagation()}
               aria-label="Previous track"
-              className="rounded text-foreground/80 hover:text-foreground"
+              className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:scale-110 active:scale-95 transition-all cursor-pointer"
             >
               <SkipBack className="size-4 fill-current" />
             </button>
             <button
               type="button"
               onClick={() => setPlaying((p) => !p)}
+              onPointerDown={(e) => e.stopPropagation()}
               aria-label={playing ? 'Pause' : 'Play'}
-              className="rounded text-foreground hover:scale-105"
+              className="flex size-8 items-center justify-center rounded-full bg-foreground text-background shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
-              {playing ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
+              {playing ? (
+                <Pause className="size-4 fill-current" />
+              ) : (
+                <Play className="size-4 fill-current translate-x-0.5" />
+              )}
             </button>
             <button
               type="button"
               onClick={() => skip(1)}
+              onPointerDown={(e) => e.stopPropagation()}
               aria-label="Next track"
-              className="rounded text-foreground/80 hover:text-foreground"
+              className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:scale-110 active:scale-95 transition-all cursor-pointer"
             >
               <SkipForward className="size-4 fill-current" />
             </button>
           </div>
         </div>
       </div>
-      <div className="flex flex-col gap-2">
+
+      {/* Progress Timeline */}
+      <div className="flex flex-col gap-1.5">
         <div
-          className="h-1 w-full overflow-hidden rounded-full bg-muted"
+          onClick={handleSeek}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="group/seek relative h-1.5 w-full overflow-hidden rounded-full bg-muted cursor-pointer"
           role="progressbar"
           aria-label="Playback progress"
           aria-valuemin={0}
-          aria-valuemax={DURATION}
+          aria-valuemax={duration}
           aria-valuenow={elapsed}
         >
           <div
-            className="h-full rounded-full bg-foreground/60 transition-[width] duration-1000 ease-linear"
-            style={{ width: `${(elapsed / DURATION) * 100}%` }}
+            className="h-full rounded-full bg-signal transition-all duration-300"
+            style={{ width: `${(elapsed / duration) * 100}%` }}
           />
         </div>
-        <div className="flex justify-between text-[11px] tabular-nums text-muted-foreground">
+        <div className="flex justify-between text-[11px] tabular-nums text-muted-foreground/80 font-medium px-0.5">
           <span>{format(elapsed)}</span>
-          <span>-{format(DURATION - elapsed)}</span>
+          <span>-{format(Math.max(0, duration - elapsed))}</span>
         </div>
       </div>
     </div>

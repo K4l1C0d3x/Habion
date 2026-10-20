@@ -41,7 +41,7 @@ export function DraggableItem({
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (event.button !== 0) return
     const target = event.target as HTMLElement
-    if (target.closest('button, input, textarea, a, select, [role="button"]')) return
+    if (target.closest('button, input, textarea, a, select, [role="button"], [data-no-drag]')) return
 
     start.current = { x: event.clientX, y: event.clientY, offsetX: offset.x, offsetY: offset.y }
 
@@ -52,20 +52,25 @@ export function DraggableItem({
     const width = rect.width
     const height = rect.height
 
-    const PADDING_X = 12
-    const PADDING_TOP = 42 // Keep below the top menu bar (36px)
-    const PADDING_BOTTOM = 84 // Keep above the bottom dock
+    const PADDING_X = 8
+    const PADDING_TOP = 40 // Keep below the top menu bar (36px)
+    const PADDING_BOTTOM = 76 // Keep above the bottom dock
 
     const minX = PADDING_X
     const maxX = window.innerWidth - PADDING_X
     const minY = PADDING_TOP
-    const maxY = Math.max(minY + height, window.innerHeight - PADDING_BOTTOM)
+    const maxY = window.innerHeight - PADDING_BOTTOM
+
+    const minOffsetX = minX - baseLeft
+    const maxOffsetX = Math.max(minOffsetX + 120, maxX - baseLeft - width)
+    const minOffsetY = minY - baseTop
+    const maxOffsetY = Math.max(minOffsetY + 100, maxY - baseTop - height)
 
     boundsRef.current = {
-      minOffsetX: minX - baseLeft,
-      maxOffsetX: Math.max(minX - baseLeft, maxX - baseLeft - width),
-      minOffsetY: minY - baseTop,
-      maxOffsetY: Math.max(minY - baseTop, maxY - baseTop - height),
+      minOffsetX,
+      maxOffsetX,
+      minOffsetY,
+      maxOffsetY,
     }
 
     event.currentTarget.setPointerCapture(event.pointerId)
