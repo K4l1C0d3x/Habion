@@ -17,7 +17,9 @@ export function PhotoWidget() {
     return () => clearInterval(id)
   }, [autoRotate, isHovered, isAppOpen, intervalSeconds, photos.length])
 
-  const current = photos[currentIndex] || photos[0]
+  const current = photos[currentIndex]?.src
+    ? photos[currentIndex]
+    : photos.find((p) => Boolean(p.src)) || photos[0]
 
   return (
     <div
@@ -27,18 +29,29 @@ export function PhotoWidget() {
     >
       {/* Photo with Custom Crop Framing */}
       <div className="size-full overflow-hidden">
-        <img
-          src={current.src}
-          alt={current.alt}
-          draggable={false}
-          className="size-full transition-all duration-700 ease-out"
-          style={{
-            objectFit: 'cover',
-            objectPosition: `${current.x}% ${current.y}%`,
-            transform: `scale(${current.zoom})`,
-            transformOrigin: `${current.x}% ${current.y}%`,
-          }}
-        />
+        {current?.src ? (
+          <img
+            src={current.src}
+            alt={current.alt || current.title}
+            draggable={false}
+            className="size-full transition-all duration-700 ease-out"
+            style={{
+              objectFit: 'cover',
+              objectPosition: `${current.x}% ${current.y}%`,
+              transform: `scale(${current.zoom})`,
+              transformOrigin: `${current.x}% ${current.y}%`,
+            }}
+          />
+        ) : (
+          <div
+            onClick={() => photoStore.openApp()}
+            className="size-full flex flex-col items-center justify-center gap-1.5 p-4 text-center cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
+          >
+            <span className="text-2xl">📷</span>
+            <span className="text-[11px] font-bold text-foreground">No Photos</span>
+            <span className="text-[9px] text-muted-foreground">Click ↗ to upload photos</span>
+          </div>
+        )}
       </div>
 
       {/* Top Right "Open App" Arrow Button - only visible on hover */}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Pencil, FolderOpen } from 'lucide-react'
+import { FolderOpen, Edit3 } from 'lucide-react'
 import { DraggableItem } from './draggable-item'
 
 export function DesktopFolders() {
@@ -13,6 +13,7 @@ export function DesktopFolders() {
 
   const inputRef = useRef<HTMLInputElement>(null)
   const lastClickRef = useRef<number>(0)
+  const lastClickPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Load saved folder name from localStorage after mount
@@ -81,16 +82,23 @@ export function DesktopFolders() {
     setIsEditing(false)
   }
 
-  // Handle double-click through both click-timing and native double-click
-  function handleLabelClick(e: React.MouseEvent) {
-    e.stopPropagation()
+  // Intercept double-click on pointerdown before drag capture can swallow it
+  function handleFolderPointerDown(e: React.PointerEvent) {
     const now = Date.now()
-    if (now - lastClickRef.current < 450) {
+    const dx = Math.abs(e.clientX - lastClickPos.current.x)
+    const dy = Math.abs(e.clientY - lastClickPos.current.y)
+
+    if (now - lastClickRef.current < 450 && dx < 15 && dy < 15) {
+      // Double click detected!
+      e.stopPropagation()
+      e.preventDefault()
       handleStartRename(e)
       lastClickRef.current = 0
-    } else {
-      lastClickRef.current = now
+      return
     }
+
+    lastClickRef.current = now
+    lastClickPos.current = { x: e.clientX, y: e.clientY }
   }
 
   function handleContextMenu(e: React.MouseEvent) {
@@ -109,16 +117,17 @@ export function DesktopFolders() {
             className="group/folder flex w-28 flex-col items-center gap-1 rounded-lg p-1 text-center select-none"
           >
             <DraggableItem id="folder-desktop" className="flex flex-col items-center gap-1.5">
-              {/* Folder Icon - Double click also triggers open / rename */}
+              {/* Folder Icon - Double click anywhere on icon enters rename mode */}
               <div
+                onPointerDown={handleFolderPointerDown}
                 onDoubleClick={handleStartRename}
                 title="Double-click to rename"
-                className="cursor-pointer"
+                className="cursor-pointer transition-transform active:scale-95"
               >
                 <FolderIcon />
               </div>
 
-              {/* Folder Name Label / Inline Rename Input */}
+              {/* Folder Name Label / Inline Rename Input (No pen/pencil icon) */}
               {isEditing ? (
                 <div
                   data-no-drag="true"
@@ -147,22 +156,12 @@ export function DesktopFolders() {
               ) : (
                 <div
                   data-no-drag="true"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={handleLabelClick}
+                  onPointerDown={handleFolderPointerDown}
                   onDoubleClick={handleStartRename}
                   title="Double-click to rename"
-                  className="group/name relative flex items-center justify-center gap-1 rounded-md bg-card/85 px-2 py-0.5 text-[13px] leading-snug font-medium text-pretty hover:bg-card border border-transparent hover:border-border cursor-pointer transition-colors max-w-full"
+                  className="rounded-md bg-card/85 px-2 py-0.5 text-[13px] leading-snug font-medium text-pretty hover:bg-card border border-transparent hover:border-border cursor-pointer transition-colors max-w-full"
                 >
                   <span className="truncate">{folderName}</span>
-                  {/* Subtle edit pencil icon on hover */}
-                  <button
-                    type="button"
-                    onClick={handleStartRename}
-                    title="Rename folder"
-                    className="flex size-3.5 items-center justify-center rounded text-muted-foreground hover:text-foreground opacity-0 group-hover/name:opacity-100 transition-opacity"
-                  >
-                    <Pencil className="size-2.5" />
-                  </button>
                 </div>
               )}
             </DraggableItem>
@@ -182,7 +181,7 @@ export function DesktopFolders() {
             onClick={handleStartRename}
             className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 font-medium hover:bg-muted text-foreground transition-colors cursor-pointer text-left"
           >
-            <Pencil className="size-3.5 text-muted-foreground" />
+            <Edit3 className="size-3.5 text-muted-foreground" />
             <span>Rename</span>
           </button>
           <button

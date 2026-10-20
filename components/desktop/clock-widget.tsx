@@ -2,37 +2,33 @@
 
 import { useNow } from '@/lib/use-now'
 
-function getZonedParts(date: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-    hour12: false,
-  }).formatToParts(date)
-  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0)
-  return { h: get('hour') % 12, m: get('minute'), s: get('second') }
-}
-
 export function ClockWidget() {
   const { now, ready } = useNow(1000)
-  const { h, m, s } = getZonedParts(now, 'America/New_York')
 
-  const hourDeg = h * 30 + m * 0.5
-  const minuteDeg = m * 6 + s * 0.1
+  // Use the user's actual local system time
+  const hours = now.getHours()
+  const h = hours % 12
+  const m = now.getMinutes()
+  const s = now.getSeconds()
+
+  // Proportional analog angles
+  const hourDeg = (h + m / 60) * 30
+  const minuteDeg = (m + s / 60) * 6
   const secondDeg = s * 6
+
+  const digitalTime = now.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 
   return (
     <div
-      className="widget flex aspect-square w-full items-center justify-center p-4"
+      className="widget flex aspect-square w-full items-center justify-center p-4 select-none"
       role="img"
-      aria-label={`Analog clock showing the time in Miami: ${now.toLocaleTimeString('en-US', {
-        timeZone: 'America/New_York',
-        hour: 'numeric',
-        minute: '2-digit',
-      })}`}
+      aria-label={`Analog clock showing accurate local time: ${digitalTime}`}
     >
       <div className="relative aspect-square w-full">
+        {/* 12 Hour Dial Markers */}
         {Array.from({ length: 12 }).map((_, i) => (
           <span
             key={i}
@@ -40,17 +36,41 @@ export function ClockWidget() {
             className="absolute inset-0 flex justify-center"
             style={{ transform: `rotate(${i * 30}deg)` }}
           >
-            <span className={`mt-1 block rounded-full bg-muted-foreground/70 ${i % 3 === 0 ? 'h-1.5 w-1' : 'h-1 w-px'}`} />
+            <span
+              className={`mt-1 block rounded-full ${
+                i % 3 === 0
+                  ? 'h-2 w-1 bg-foreground'
+                  : 'h-1.5 w-0.5 bg-muted-foreground/60'
+              }`}
+            />
           </span>
         ))}
-        <span className="absolute inset-x-0 top-[26%] text-center text-[11px] font-medium tracking-wide text-muted-foreground">
-          MIAMI
+
+        {/* Dial Subtitle */}
+        <span className="absolute inset-x-0 top-[26%] text-center text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+          LOCAL
         </span>
-        <div className={`absolute inset-0 transition-opacity ${ready ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true">
-          <Hand deg={hourDeg} className="h-[28%] w-[3px] bg-foreground" />
-          <Hand deg={minuteDeg} className="h-[40%] w-[3px] bg-foreground" />
-          <Hand deg={secondDeg} className="h-[42%] w-px bg-signal" />
-          <span className="absolute top-1/2 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground" />
+
+        {/* Exact Digital Readout */}
+        <span className="absolute inset-x-0 bottom-[24%] text-center text-[11px] font-mono font-bold tracking-tight text-foreground tabular-nums">
+          {ready ? digitalTime : '--:--'}
+        </span>
+
+        {/* Analog Hands */}
+        <div
+          className={`absolute inset-0 transition-opacity duration-300 ${
+            ready ? 'opacity-100' : 'opacity-0'
+          }`}
+          aria-hidden="true"
+        >
+          {/* Hour Hand */}
+          <Hand deg={hourDeg} className="h-[28%] w-[3.5px] bg-foreground shadow-sm" />
+          {/* Minute Hand */}
+          <Hand deg={minuteDeg} className="h-[40%] w-[2.5px] bg-foreground/90 shadow-sm" />
+          {/* Second Hand (Signal Red) */}
+          <Hand deg={secondDeg} className="h-[43%] w-[1.5px] bg-signal shadow-xs" />
+          {/* Center Pin */}
+          <span className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal ring-2 ring-background" />
         </div>
       </div>
     </div>

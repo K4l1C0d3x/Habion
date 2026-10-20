@@ -222,6 +222,25 @@ export const photoStore = {
     persistPhotos()
     emitChange()
   },
+  removePhoto: (idx: number) => {
+    const updated = state.photos.map((p, i) => {
+      if (i === idx) {
+        return {
+          ...p,
+          src: '',
+          title: `Empty Slot ${idx + 1}`,
+          isCustom: false,
+          x: 50,
+          y: 50,
+          zoom: 1.0,
+        }
+      }
+      return p
+    })
+    state = { ...state, photos: updated }
+    persistPhotos()
+    emitChange()
+  },
   resetPhotoToDefault: (idx: number) => {
     const def = DEFAULT_PHOTOS[idx]
     if (!def) return

@@ -95,7 +95,7 @@ export function MusicWidget() {
   return (
     <div className="widget group/music flex w-full flex-col gap-4 p-5 select-none">
       <div className="flex items-start gap-4">
-        {/* Album Cover Art */}
+        {/* Album Cover Art (Static, no hover scale movement) */}
         <div
           aria-hidden="true"
           className="relative flex aspect-square w-[90px] shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-md border border-black/10 dark:border-white/10 bg-black"
@@ -104,7 +104,7 @@ export function MusicWidget() {
             src={track.cover}
             alt={`${track.album} by ${track.artist}`}
             draggable={false}
-            className="size-full object-cover transition-transform duration-500 group-hover/music:scale-105"
+            className="size-full object-cover"
           />
         </div>
 
@@ -133,12 +133,12 @@ export function MusicWidget() {
               onClick={() => setPlaying((p) => !p)}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label={playing ? 'Pause' : 'Play'}
-              className="flex size-8 items-center justify-center rounded-full bg-foreground text-background shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="flex size-8 items-center justify-center rounded-full bg-foreground text-background shadow-xs hover:opacity-90 active:scale-95 transition-all cursor-pointer"
             >
               {playing ? (
                 <Pause className="size-4 fill-current" />
               ) : (
-                <Play className="size-4 fill-current translate-x-0.5" />
+                <Play className="size-4 fill-current" />
               )}
             </button>
             <button

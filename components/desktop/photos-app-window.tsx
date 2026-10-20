@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
   Upload,
   Sparkles,
+  Trash2,
 } from 'lucide-react'
 import { usePhotoStore, photoStore, processImageFile } from '@/lib/photo-store'
 
@@ -157,44 +158,60 @@ export function PhotosAppWindow() {
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDropOnPreview}
-                title="Drag & drop any photo file here to upload"
-                className="group relative size-52 sm:size-56 overflow-hidden rounded-3xl border-2 border-signal shadow-lg bg-black/10 cursor-pointer"
+                title={current.src ? 'Drag & drop any photo file here to replace' : 'Click or drop photo here to upload'}
+                className={`group relative size-52 sm:size-56 overflow-hidden rounded-3xl border-2 shadow-lg cursor-pointer ${
+                  current.src
+                    ? 'border-signal bg-black/10'
+                    : 'border-dashed border-muted-foreground/40 bg-muted/20 flex flex-col items-center justify-center'
+                }`}
                 onClick={() => triggerUpload(currentIndex)}
               >
-                <img
-                  src={current.src}
-                  alt={current.alt}
-                  draggable={false}
-                  className="size-full transition-all duration-100"
-                  style={{
-                    objectFit: 'cover',
-                    objectPosition: `${current.x}% ${current.y}%`,
-                    transform: `scale(${current.zoom})`,
-                    transformOrigin: `${current.x}% ${current.y}%`,
-                  }}
-                />
+                {current.src ? (
+                  <>
+                    <img
+                      src={current.src}
+                      alt={current.alt || current.title}
+                      draggable={false}
+                      className="size-full transition-all duration-100"
+                      style={{
+                        objectFit: 'cover',
+                        objectPosition: `${current.x}% ${current.y}%`,
+                        transform: `scale(${current.zoom})`,
+                        transformOrigin: `${current.x}% ${current.y}%`,
+                      }}
+                    />
 
-                {/* Rule of Thirds Guide Lines */}
-                <div className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3 border border-white/20">
-                  <div className="border-r border-b border-white/15" />
-                  <div className="border-r border-b border-white/15" />
-                  <div className="border-b border-white/15" />
-                  <div className="border-r border-b border-white/15" />
-                  <div className="border-r border-b border-white/15" />
-                  <div className="border-b border-white/15" />
-                  <div className="border-r border-b border-white/15" />
-                  <div className="border-r border-b border-white/15" />
-                  <div />
-                </div>
+                    {/* Rule of Thirds Guide Lines */}
+                    <div className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3 border border-white/20">
+                      <div className="border-r border-b border-white/15" />
+                      <div className="border-r border-b border-white/15" />
+                      <div className="border-b border-white/15" />
+                      <div className="border-r border-b border-white/15" />
+                      <div className="border-r border-b border-white/15" />
+                      <div className="border-b border-white/15" />
+                      <div className="border-r border-b border-white/15" />
+                      <div className="border-r border-b border-white/15" />
+                      <div />
+                    </div>
 
-                {/* Upload Overlay on Hover */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[1px]">
-                  <Upload className="size-6 stroke-[2]" />
-                  <span className="text-[11px] font-bold">Click or Drop Picture</span>
-                </div>
+                    {/* Upload Overlay on Hover */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[1px]">
+                      <Upload className="size-6 stroke-[2]" />
+                      <span className="text-[11px] font-bold">Replace Picture</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-center">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground group-hover:scale-110 group-hover:text-foreground transition-all">
+                      <Upload className="size-6 stroke-[2]" />
+                    </div>
+                    <span className="text-xs font-bold text-foreground">Empty Slot {currentIndex + 1}</span>
+                    <span className="text-[10px] text-muted-foreground">Click or drop image to upload</span>
+                  </div>
+                )}
               </div>
 
-              {/* Title and Upload/Reset Actions */}
+              {/* Title and Upload/Remove/Reset Actions */}
               <div className="flex flex-col items-center gap-1.5 w-full">
                 <div className="flex items-center gap-1.5">
                   <p className="text-xs font-bold text-foreground text-center truncate max-w-[180px]">
@@ -205,9 +222,15 @@ export function PhotosAppWindow() {
                       Custom
                     </span>
                   )}
+                  {!current.src && (
+                    <span className="rounded-full bg-muted text-muted-foreground text-[9px] font-semibold px-1.5 py-0.2 border border-border">
+                      No Image
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap justify-center">
+                  {/* 1. Upload Button */}
                   <button
                     type="button"
                     onClick={() => triggerUpload(currentIndex)}
@@ -215,14 +238,28 @@ export function PhotosAppWindow() {
                     className="flex items-center gap-1 rounded-xl bg-signal px-3 py-1 text-xs font-bold text-white shadow-xs hover:opacity-90 active:scale-95 transition-all cursor-pointer"
                   >
                     <Upload className="size-3 stroke-[2.5]" />
-                    <span>{isUploading ? 'Uploading…' : 'Upload to Slot ' + (currentIndex + 1)}</span>
+                    <span>{isUploading ? 'Uploading…' : (current.src ? 'Replace Photo' : 'Upload Photo')}</span>
                   </button>
 
-                  {current.isCustom && (
+                  {/* 2. Remove Image Button */}
+                  {current.src && (
+                    <button
+                      type="button"
+                      onClick={() => photoStore.removePhoto(currentIndex)}
+                      title="Remove image from this slot"
+                      className="flex items-center gap-1 rounded-xl border border-border bg-card px-2.5 py-1 text-xs font-medium text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/30 active:scale-95 transition-all cursor-pointer shadow-xs"
+                    >
+                      <Trash2 className="size-3" />
+                      <span>Remove</span>
+                    </button>
+                  )}
+
+                  {/* 3. Restore Default Button */}
+                  {(current.isCustom || !current.src) && (
                     <button
                       type="button"
                       onClick={() => photoStore.resetPhotoToDefault(currentIndex)}
-                      title="Reset this slot to original default image"
+                      title="Restore original default preset image for this slot"
                       className="flex items-center gap-1 rounded-xl border border-border bg-muted/60 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-all cursor-pointer"
                     >
                       <RotateCcw className="size-3" />
@@ -365,11 +402,17 @@ export function PhotosAppWindow() {
                     }`}
                   >
                     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted/50">
-                      <img
-                        src={p.src}
-                        alt={p.alt}
-                        className="size-full object-cover transition-transform group-hover:scale-105"
-                      />
+                      {p.src ? (
+                        <img
+                          src={p.src}
+                          alt={p.alt || p.title}
+                          className="size-full object-cover transition-transform group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="size-full flex flex-col items-center justify-center border border-dashed border-border rounded-lg text-muted-foreground/60 bg-muted/20">
+                          <Upload className="size-3.5" />
+                        </div>
+                      )}
                       {isSelected && (
                         <div className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-signal text-white shadow-xs">
                           <Check className="size-2.5 stroke-[3]" />
