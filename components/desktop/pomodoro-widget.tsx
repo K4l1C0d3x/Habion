@@ -20,15 +20,15 @@ export function PomodoroWidget() {
       : 'stroke-blue-500'
 
   return (
-    <div className="widget flex w-full flex-col gap-2.5 p-4 select-none">
+    <div className="widget group/focus flex w-full flex-col gap-2.5 p-4 select-none">
       {/* Header with Title and Open App Arrow */}
       <div className="flex items-center justify-between">
         <div
           onClick={() => focusStore.openApp()}
-          className="flex items-center gap-1.5 cursor-pointer group"
+          className="flex items-center gap-1.5 cursor-pointer"
           title="Open Focus App"
         >
-          <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase group-hover:text-foreground transition-colors">
+          <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase hover:text-foreground transition-colors">
             {isBreak ? 'Break' : 'Focus'}
           </span>
           {/* Active 4-cycle dots */}
@@ -47,13 +47,13 @@ export function PomodoroWidget() {
           </div>
         </div>
 
-        {/* Open Full App Arrow (Like To-Do) */}
+        {/* Open Full App Arrow (visible only on hover) */}
         <button
           type="button"
           onClick={() => focusStore.openApp()}
           onPointerDown={(e) => e.stopPropagation()}
           title="Open Focus App"
-          className="flex size-5 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+          className="flex size-5 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground opacity-0 group-hover/focus:opacity-100 transition-opacity cursor-pointer"
         >
           <ArrowUpRight className="size-3.5" />
         </button>

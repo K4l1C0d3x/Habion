@@ -1,6 +1,6 @@
 import { DraggableItem } from './draggable-item'
 
-const FOLDERS = ['QA Agent Loop', 'Eleyyva', 'Engineering', 'Product Mgmt', 'Customer Success']
+const FOLDERS = ['Customer Success']
 
 export function DesktopFolders() {
   return (
@@ -8,7 +8,7 @@ export function DesktopFolders() {
       <ul className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:gap-4 lg:overflow-visible lg:pb-0">
         {FOLDERS.map((label) => (
           <li key={label} className="group flex w-24 flex-col items-center gap-1 rounded-lg p-1 text-center">
-            <DraggableItem className="flex flex-col items-center gap-1">
+            <DraggableItem id={`folder-${label.toLowerCase().replace(/\s+/g, '-')}`} className="flex flex-col items-center gap-1">
               <FolderIcon />
               <span className="rounded-md bg-card/80 px-1.5 py-0.5 text-[13px] leading-snug font-medium text-pretty group-hover:bg-folder/20">
                 {label}

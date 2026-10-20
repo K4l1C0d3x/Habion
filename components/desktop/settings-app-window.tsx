@@ -13,6 +13,8 @@ import {
   Sparkles,
   Laptop,
   Check,
+  Bookmark,
+  History,
 } from 'lucide-react'
 import { useSettingsStore, settingsStore, type SettingsTab, type WidgetVisibility } from '@/lib/settings-store'
 import { useTheme, themeManager } from '@/lib/theme'
@@ -39,15 +41,17 @@ const WIDGET_LABELS: { key: keyof WidgetVisibility; label: string; desc: string 
   { key: 'todo', label: 'Reminders & Tasks', desc: 'Task checklist connected to Reminders app' },
   { key: 'focus', label: 'Focus & Pomodoro', desc: 'Timer with 4-cycle Pomodoro loop' },
   { key: 'habit', label: 'Habit Tracker', desc: 'Daily habits with streaks and week dots' },
+  { key: 'photo', label: 'Photo & Framing', desc: 'Interactive photo album with crop studio' },
   { key: 'notes', label: 'Sticky Notes', desc: 'Persistent scratchpad note' },
   { key: 'apps', label: 'Daily Apps Grid', desc: 'Curated 10-tool daily stack' },
 ]
 
 export function SettingsAppWindow() {
-  const { isAppOpen, activeTab, widgets } = useSettingsStore()
+  const { isAppOpen, activeTab, widgets, widgetPositions, savedStage, savedStageDate } = useSettingsStore()
   const theme = useTheme()
   const { soundEnabled, durations } = useFocusStore()
   const [isMaximized, setIsMaximized] = useState(false)
+  const [saveNotice, setSaveNotice] = useState(false)
   const windowRef = useRef<HTMLDivElement>(null)
 
   // Escape key to close
@@ -237,21 +241,91 @@ export function SettingsAppWindow() {
             {/* 2. WIDGETS & DESKTOP TAB */}
             {activeTab === 'widgets' && (
               <div className="flex flex-col gap-5 animate-in fade-in duration-150">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold">Widgets & Desktop</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Toggle desktop widgets on or off and manage layout.
-                    </p>
+                <div>
+                  <h2 className="text-lg font-bold">Widgets & Desktop</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Configure desktop widgets and manage your custom stage layout.
+                  </p>
+                </div>
+
+                {/* Stage & Layout Memory Card */}
+                <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex size-8 items-center justify-center rounded-xl bg-signal/10 text-signal">
+                        <Bookmark className="size-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold text-foreground">Desktop Stage & Positions</h3>
+                        <p className="text-[11px] text-muted-foreground">
+                          {Object.keys(widgetPositions).length > 0
+                            ? `${Object.keys(widgetPositions).length} widgets arranged in custom positions`
+                            : 'Widgets are currently aligned to default grid'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {savedStageDate && (
+                      <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full border border-border/50">
+                        Saved: {savedStageDate}
+                      </span>
+                    )}
                   </div>
-                  <button
-                    onClick={() => settingsStore.resetDesktopLayout()}
-                    title="Reset all dragged items back to origin"
-                    className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
-                  >
-                    <RotateCcw className="size-3" />
-                    <span>Reset Layout</span>
-                  </button>
+
+                  {/* Actions Row */}
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60">
+                    {/* 1. Save Stage Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        settingsStore.saveCurrentStage()
+                        setSaveNotice(true)
+                        setTimeout(() => setSaveNotice(false), 2500)
+                      }}
+                      className="flex items-center gap-1.5 rounded-xl bg-signal px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                    >
+                      {saveNotice ? (
+                        <>
+                          <Check className="size-3.5 stroke-[3]" />
+                          <span>Stage Saved!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark className="size-3.5" />
+                          <span>Save Current Stage</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* 2. Restore Saved Stage Button */}
+                    <button
+                      type="button"
+                      disabled={!savedStage}
+                      onClick={() => settingsStore.restoreSavedStage()}
+                      title={savedStage ? 'Restore your saved stage snapshot' : 'No stage saved yet'}
+                      className="flex items-center gap-1.5 rounded-xl border border-border bg-muted/60 px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                    >
+                      <History className="size-3.5 text-muted-foreground" />
+                      <span>Restore Saved Stage</span>
+                    </button>
+
+                    {/* 3. Reset to Default Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        settingsStore.resetDesktopLayout()
+                      }}
+                      title="Reset all dragged widgets back to default coordinates"
+                      className="flex items-center gap-1.5 rounded-xl border border-border bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all cursor-pointer"
+                    >
+                      <RotateCcw className="size-3.5" />
+                      <span>Reset to Default</span>
+                    </button>
+                  </div>
+
+                  <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                    Widget positions are automatically remembered as you drag them. Click <span className="font-semibold text-foreground">Save Current Stage</span> to preserve a permanent checkpoint, or <span className="font-semibold text-foreground">Reset to Default</span> to restore the original macOS layout.
+                  </p>
                 </div>
 
                 {/* Widgets List */}

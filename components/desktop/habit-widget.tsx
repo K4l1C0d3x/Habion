@@ -1,125 +1,24 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { Check, Flame } from 'lucide-react'
-
-interface Habit {
-  id: string
-  name: string
-  icon: string
-}
-
-const DEFAULT_HABITS: Habit[] = [
-  { id: 'read', name: 'Read', icon: '📖' },
-  { id: 'exercise', name: 'Exercise', icon: '🏃' },
-  { id: 'meditate', name: 'Meditate', icon: '🧘' },
-]
+import { useMemo } from 'react'
+import { Check, Flame, ArrowUpRight } from 'lucide-react'
+import {
+  useHabitStore,
+  habitStore,
+  calculateStreak,
+  toDateKey,
+} from '@/lib/habit-store'
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
-function toDateKey(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function getInitialHistory(): Record<string, string[]> {
-  const history: Record<string, string[]> = {}
-  const now = new Date()
-
-  // Seed past 3 days with all habits done for a live realistic streak
-  for (let i = 3; i >= 1; i--) {
-    const past = new Date(now)
-    past.setDate(past.getDate() - i)
-    history[toDateKey(past)] = ['read', 'exercise', 'meditate']
-  }
-
-  // Today seeded with 1 habit done
-  history[toDateKey(now)] = ['read']
-  return history
-}
-
 export function HabitWidget() {
-  const [mounted, setMounted] = useState(false)
-  const [history, setHistory] = useState<Record<string, string[]>>({})
+  const { habits, history } = useHabitStore()
   const todayKey = useMemo(() => toDateKey(new Date()), [])
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('habit-history-v2')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          setHistory(parsed)
-        } else {
-          const seeded = getInitialHistory()
-          setHistory(seeded)
-          localStorage.setItem('habit-history-v2', JSON.stringify(seeded))
-        }
-      } else {
-        const seeded = getInitialHistory()
-        setHistory(seeded)
-        localStorage.setItem('habit-history-v2', JSON.stringify(seeded))
-      }
-    } catch {
-      setHistory(getInitialHistory())
-    }
-    setMounted(true)
-  }, [])
-
-  function toggleHabit(habitId: string) {
-    setHistory((prev) => {
-      const currentToday = prev[todayKey] || []
-      const nextToday = currentToday.includes(habitId)
-        ? currentToday.filter((id) => id !== habitId)
-        : [...currentToday, habitId]
-
-      const nextState = {
-        ...prev,
-        [todayKey]: nextToday,
-      }
-
-      try {
-        localStorage.setItem('habit-history-v2', JSON.stringify(nextState))
-      } catch {
-        // ignore localStorage errors
-      }
-
-      return nextState
-    })
-  }
 
   // Calculate current streak
   const streak = useMemo(() => {
-    if (!mounted) return 3
-
-    const isDayComplete = (dateStr: string) => {
-      const doneIds = history[dateStr] || []
-      return DEFAULT_HABITS.every((h) => doneIds.includes(h.id))
-    }
-
-    let count = 0
-    const todayDone = isDayComplete(todayKey)
-    if (todayDone) {
-      count = 1
-    }
-
-    // Check consecutive past days
-    const d = new Date()
-    d.setDate(d.getDate() - 1)
-    for (let i = 0; i < 365; i++) {
-      const key = toDateKey(d)
-      if (isDayComplete(key)) {
-        count++
-        d.setDate(d.getDate() - 1)
-      } else {
-        break
-      }
-    }
-
-    return count
-  }, [history, todayKey, mounted])
+    return calculateStreak(habits, history, todayKey)
+  }, [habits, history, todayKey])
 
   // Current week days (Sunday to Saturday)
   const weekDays = useMemo(() => {
@@ -134,7 +33,8 @@ export function HabitWidget() {
       const key = toDateKey(d)
       const isPast = d < new Date(today.getFullYear(), today.getMonth(), today.getDate())
       const isToday = key === todayKey
-      const isComplete = DEFAULT_HABITS.every((h) => (history[key] || []).includes(h.id))
+      const dayDoneList = history[key] || []
+      const isComplete = habits.length > 0 && habits.every((h) => dayDoneList.includes(h.id))
       return {
         key,
         name: WEEKDAYS[i],
@@ -143,31 +43,53 @@ export function HabitWidget() {
         isComplete,
       }
     })
-  }, [history, todayKey])
+  }, [history, habits, todayKey])
 
-  const todayCompleted = history[todayKey] || (mounted ? [] : ['read'])
-  const completedCount = DEFAULT_HABITS.filter((h) => todayCompleted.includes(h.id)).length
-  const progressPercent = Math.round((completedCount / DEFAULT_HABITS.length) * 100)
+  const todayCompleted = history[todayKey] || []
+  const completedCount = habits.filter((h) => todayCompleted.includes(h.id)).length
+  const progressPercent = habits.length ? Math.round((completedCount / habits.length) * 100) : 0
+
+  // Display top 3 habits in widget to maintain clean macOS widget grid layout
+  const visibleHabits = habits.slice(0, 3)
+  const remainingCount = habits.length - visibleHabits.length
 
   return (
-    <div className="widget flex w-full flex-col gap-3 p-4 select-none">
+    <div className="widget group/habit flex w-full flex-col gap-3 p-4 select-none">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+        <div
+          onClick={() => habitStore.openApp()}
+          className="flex items-center gap-2 min-w-0 cursor-pointer"
+          title="Open Habits Studio"
+        >
+          <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase hover:text-foreground transition-colors shrink-0">
             Habits
           </span>
-          <span className="text-[10px] font-semibold text-muted-foreground/70">
-            {completedCount}/{DEFAULT_HABITS.length}
+
+          {/* Streak icon badge on the left */}
+          <div
+            className="flex items-center gap-1 rounded-full bg-signal/10 px-1.5 py-0.5 text-[11px] font-bold text-signal shrink-0"
+            title={`${streak} day streak`}
+          >
+            <Flame className="size-3 fill-signal text-signal animate-pulse" />
+            <span>{streak}d</span>
+          </div>
+
+          <span className="text-[10px] font-semibold text-muted-foreground/70 shrink-0">
+            {completedCount}/{habits.length}
           </span>
         </div>
-        <div
-          className="flex items-center gap-1 rounded-full bg-signal/10 px-2 py-0.5 text-xs font-bold text-signal"
-          title={`${streak} day streak`}
+
+        {/* Open Habits App Arrow (only visible on hover) */}
+        <button
+          type="button"
+          onClick={() => habitStore.openApp()}
+          onPointerDown={(e) => e.stopPropagation()}
+          title="Open Habits & Routines App"
+          className="flex size-5 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground opacity-0 group-hover/habit:opacity-100 transition-opacity cursor-pointer shrink-0"
         >
-          <Flame className="size-3.5 fill-signal text-signal animate-pulse" />
-          <span>{streak}d</span>
-        </div>
+          <ArrowUpRight className="size-3.5" />
+        </button>
       </div>
 
       {/* Progress bar */}
@@ -180,15 +102,15 @@ export function HabitWidget() {
 
       {/* Habit Items */}
       <ul className="flex flex-col gap-1.5">
-        {DEFAULT_HABITS.map((habit) => {
+        {visibleHabits.map((habit) => {
           const isDone = todayCompleted.includes(habit.id)
           return (
             <li key={habit.id}>
               <button
                 type="button"
-                onClick={() => toggleHabit(habit.id)}
+                onClick={() => habitStore.toggleHabit(habit.id, todayKey)}
                 onPointerDown={(e) => e.stopPropagation()}
-                className={`group flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left transition-all ${
+                className={`group/item flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left transition-all cursor-pointer ${
                   isDone ? 'bg-muted/40' : 'hover:bg-muted/60'
                 }`}
               >
@@ -208,7 +130,7 @@ export function HabitWidget() {
                   className={`size-4 shrink-0 rounded-full border transition-all flex items-center justify-center ${
                     isDone
                       ? 'border-signal bg-signal text-white shadow-xs'
-                      : 'border-muted-foreground/30 group-hover:border-foreground/60'
+                      : 'border-muted-foreground/30 group-hover/item:border-foreground/60'
                   }`}
                 >
                   {isDone && <Check className="size-2.5 stroke-[3]" />}
@@ -218,6 +140,18 @@ export function HabitWidget() {
           )
         })}
       </ul>
+
+      {/* If more habits exist, show quick jump to app */}
+      {remainingCount > 0 && (
+        <button
+          type="button"
+          onClick={() => habitStore.openApp()}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="text-left text-[10px] font-semibold text-signal hover:underline px-1 -mt-1 cursor-pointer"
+        >
+          +{remainingCount} more in Habits App →
+        </button>
+      )}
 
       {/* Weekly consistency mini tracker */}
       <div className="pt-1 border-t border-border/60">

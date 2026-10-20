@@ -13,12 +13,11 @@ export function MenuBar() {
 
   return (
     <header className="sticky top-0 z-40 flex h-9 items-center justify-between border-b border-border bg-background/80 px-4 text-[13px] backdrop-blur-md select-none transition-colors duration-200">
-      <nav aria-label="Primary" className="flex items-center gap-5">
-        <a href="#top" className="font-semibold tracking-tight hover:opacity-80 transition-opacity">
-          KJ
+      <nav aria-label="Primary" className="flex items-center gap-4 sm:gap-5">
+        <a href="#top" className="font-bold tracking-tight hover:opacity-80 transition-opacity">
+          Habion
         </a>
-        <span className="font-medium">Kalidas</span>
-        <span className="hidden text-muted-foreground sm:inline">Head of Product</span>
+        <span className="font-medium text-muted-foreground">Kalidas</span>
       </nav>
 
       <div className="flex items-center gap-2 sm:gap-3">

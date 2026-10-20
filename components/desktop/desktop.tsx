@@ -19,7 +19,7 @@ export function Desktop() {
 
   return (
     <section id="top" aria-labelledby="hero-title" className="px-3 pt-10 pb-8 lg:p-0">
-      <div key={resetLayoutKey} className="relative flex flex-col gap-8 lg:block lg:h-[max(920px,calc(100svh-2.25rem))]">
+      <div key={resetLayoutKey} className="relative flex flex-col gap-8 lg:block lg:h-[calc(100svh-2.25rem)] lg:overflow-hidden">
         <div className="flex flex-col items-center gap-6 text-center lg:pointer-events-none lg:absolute lg:inset-0 lg:justify-center lg:pb-16">
           <h1
             id="hero-title"
@@ -38,54 +38,56 @@ export function Desktop() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:contents">
           {widgets.clock && (
             <div className="lg:absolute lg:top-20 lg:left-3 lg:w-[188px]">
-              <DraggableItem><ClockWidget /></DraggableItem>
+              <DraggableItem id="clock"><ClockWidget /></DraggableItem>
             </div>
           )}
           {widgets.calendar && (
             <div className="lg:absolute lg:top-20 lg:left-[224px] lg:w-[188px]">
-              <DraggableItem><CalendarWidget /></DraggableItem>
+              <DraggableItem id="calendar"><CalendarWidget /></DraggableItem>
             </div>
           )}
           {widgets.music && (
             <div className="col-span-2 lg:absolute lg:top-16 lg:left-[450px] lg:w-[400px]">
-              <DraggableItem><MusicWidget /></DraggableItem>
+              <DraggableItem id="music"><MusicWidget /></DraggableItem>
             </div>
           )}
           {widgets.weather && (
             <div className="col-span-2 lg:absolute lg:top-[330px] lg:left-3 lg:w-[400px]">
-              <DraggableItem><WeatherWidget /></DraggableItem>
+              <DraggableItem id="weather"><WeatherWidget /></DraggableItem>
+            </div>
+          )}
+          {widgets.focus && (
+            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[330px] lg:left-[420px] lg:w-[200px]">
+              <DraggableItem id="focus"><PomodoroWidget /></DraggableItem>
+            </div>
+          )}
+          {widgets.habit && (
+            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[330px] lg:left-[636px] lg:w-[220px]">
+              <DraggableItem id="habit"><HabitWidget /></DraggableItem>
+            </div>
+          )}
+          {widgets.photo !== false && (
+            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[506px] lg:left-3 lg:w-[186px]">
+              <DraggableItem id="photo">
+                <PhotoWidget />
+              </DraggableItem>
             </div>
           )}
           {widgets.todo && (
             <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[506px] lg:left-[220px] lg:w-[220px]">
-              <DraggableItem><TodoWidget /></DraggableItem>
-            </div>
-          )}
-          <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[506px] lg:left-3 lg:w-[186px]">
-            <DraggableItem>
-              <PhotoWidget />
-            </DraggableItem>
-          </div>
-          {widgets.focus && (
-            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[330px] lg:left-[420px] lg:w-[200px]">
-              <DraggableItem><PomodoroWidget /></DraggableItem>
+              <DraggableItem id="todo"><TodoWidget /></DraggableItem>
             </div>
           )}
           {widgets.notes && (
             <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[506px] lg:left-[450px] lg:w-[240px]">
-              <DraggableItem><NotesWidget /></DraggableItem>
-            </div>
-          )}
-          {widgets.habit && (
-            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[680px] lg:left-3 lg:w-[220px]">
-              <DraggableItem><HabitWidget /></DraggableItem>
+              <DraggableItem id="notes"><NotesWidget /></DraggableItem>
             </div>
           )}
         </div>
 
         {widgets.apps && (
-          <div className="flex justify-center lg:absolute lg:top-[630px] lg:right-[20%]">
-            <DraggableItem><AppGrid /></DraggableItem>
+          <div className="flex justify-center lg:absolute lg:top-[515px] lg:left-[706px]">
+            <DraggableItem id="apps"><AppGrid /></DraggableItem>
           </div>
         )}
 

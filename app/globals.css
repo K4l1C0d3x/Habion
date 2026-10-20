@@ -100,12 +100,34 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0px;
+    height: 0px;
   }
   html {
     scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+    width: 0px;
+    height: 0px;
   }
   body {
     @apply bg-background text-foreground font-sans transition-colors duration-200;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overflow-x: hidden;
+  }
+  body::-webkit-scrollbar {
+    display: none;
+    width: 0px;
+    height: 0px;
   }
 }
 

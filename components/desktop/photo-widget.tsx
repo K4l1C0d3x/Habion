@@ -41,8 +41,12 @@ export function PhotoWidget() {
         />
       </div>
 
-      {/* Top Right "Open App" Arrow Button (like Focus & To-Do) */}
-      <div className="absolute top-2.5 right-2.5 z-10">
+      {/* Top Right "Open App" Arrow Button - only visible on hover */}
+      <div
+        className={`absolute top-2.5 right-2.5 z-10 transition-opacity duration-200 ${
+          isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
         <button
           type="button"
           onClick={(e) => {

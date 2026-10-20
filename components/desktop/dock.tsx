@@ -1,8 +1,9 @@
 'use client'
 
-import { Contact, Folder, Heart, Sparkles, ListTodo, Timer as TimerIcon, Settings as SettingsIcon } from 'lucide-react'
+import { Folder, Heart, Sparkles, ListTodo, Timer as TimerIcon, Settings as SettingsIcon, Flame } from 'lucide-react'
 import { useTodoStore, todoStore } from '@/lib/todo-store'
 import { useFocusStore, focusStore } from '@/lib/focus-store'
+import { useHabitStore, habitStore } from '@/lib/habit-store'
 import { useSettingsStore, settingsStore } from '@/lib/settings-store'
 import { usePhotoStore, photoStore } from '@/lib/photo-store'
 import { useNow } from '@/lib/use-now'
@@ -12,6 +13,7 @@ const TILE = 'relative flex size-12 items-center justify-center rounded-xl shado
 export function Dock() {
   const { isAppOpen: isTodoOpen } = useTodoStore()
   const { isAppOpen: isFocusOpen } = useFocusStore()
+  const { isAppOpen: isHabitOpen } = useHabitStore()
   const { isAppOpen: isSettingsOpen } = useSettingsStore()
   const { isAppOpen: isPhotoOpen } = usePhotoStore()
   const { now } = useNow(60_000)
@@ -63,6 +65,22 @@ export function Dock() {
             <span className="sr-only">Focus</span>
           </button>
           {isFocusOpen && (
+            <span className="absolute -bottom-1 size-1 rounded-full bg-foreground/80" />
+          )}
+        </li>
+
+        {/* Habits App */}
+        <li className="relative flex flex-col items-center">
+          <button
+            type="button"
+            onClick={() => habitStore.toggleApp()}
+            title="Habits & Routines Studio"
+            className={`${TILE} bg-gradient-to-b from-amber-500 to-orange-600 text-white`}
+          >
+            <Flame aria-hidden="true" className="size-5.5 fill-current" />
+            <span className="sr-only">Habits</span>
+          </button>
+          {isHabitOpen && (
             <span className="absolute -bottom-1 size-1 rounded-full bg-foreground/80" />
           )}
         </li>
@@ -134,18 +152,6 @@ export function Dock() {
               {dayNumber}
             </span>
           </div>
-        </li>
-
-        {/* About me */}
-        <li>
-          <button
-            type="button"
-            title="About me"
-            className={`${TILE} bg-gradient-to-b from-green-400 to-emerald-600 text-white`}
-          >
-            <Contact aria-hidden="true" className="size-5" />
-            <span className="sr-only">About me</span>
-          </button>
         </li>
       </ul>
     </nav>

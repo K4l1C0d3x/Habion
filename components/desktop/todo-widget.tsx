@@ -30,15 +30,15 @@ export function TodoWidget() {
   }
 
   return (
-    <div className="widget flex w-full flex-col gap-2.5 p-4 select-none">
+    <div className="widget group/todo flex w-full flex-col gap-2.5 p-4 select-none overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div
           onClick={() => todoStore.openApp()}
-          className="flex items-center gap-2 cursor-pointer group"
+          className="flex items-center gap-2 cursor-pointer"
           title="Open Reminders App"
         >
-          <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase group-hover:text-foreground transition-colors">
+          <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase hover:text-foreground transition-colors">
             To-do
           </span>
           <span suppressHydrationWarning className="text-[10px] font-semibold text-muted-foreground/70">
@@ -46,36 +46,36 @@ export function TodoWidget() {
           </span>
         </div>
 
-        {/* Open Full App Button */}
+        {/* Open Full App Button (only visible on hover) */}
         <button
           type="button"
           onClick={() => todoStore.openApp()}
           onPointerDown={(e) => e.stopPropagation()}
           title="Open Reminders App"
-          className="flex size-5 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+          className="flex size-5 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground opacity-0 group-hover/todo:opacity-100 transition-opacity cursor-pointer"
         >
           <ArrowUpRight className="size-3.5" />
         </button>
       </div>
 
       {/* Quick Add Bar */}
-      <div className="flex gap-1.5">
+      <div className="relative flex items-center w-full">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           onPointerDown={(e) => e.stopPropagation()}
           placeholder="New task…"
-          className="flex-1 rounded-lg bg-muted px-2.5 py-1 text-xs outline-none focus:bg-muted/80"
+          className="h-7 w-full min-w-0 rounded-xl bg-muted/80 pl-2.5 pr-8 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
         />
         <button
           type="button"
           onClick={handleAdd}
           onPointerDown={(e) => e.stopPropagation()}
-          className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-foreground text-background hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+          className="absolute right-1 flex size-5 items-center justify-center rounded-lg bg-foreground text-background hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
           title="Add task"
         >
-          <Plus className="size-3.5" />
+          <Plus className="size-3 stroke-[2.5]" />
         </button>
       </div>
 
