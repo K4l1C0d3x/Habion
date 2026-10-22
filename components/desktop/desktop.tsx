@@ -6,6 +6,7 @@ import { CalendarWidget } from './calendar-widget'
 import { ClockWidget } from './clock-widget'
 import { DesktopFolders } from './desktop-folders'
 import { HabitWidget } from './habit-widget'
+import { HabitStreakCard } from './habit-streak-card'
 import { MusicWidget } from './music-widget'
 import { NotesWidget } from './notes-widget'
 import { PhotoWidget } from './photo-widget'
@@ -49,6 +50,11 @@ export function Desktop() {
           {widgets.habit && (
             <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[330px] lg:left-[636px] lg:w-[220px]">
               <DraggableItem id="habit"><HabitWidget /></DraggableItem>
+            </div>
+          )}
+          {widgets.habitStreak !== false && (
+            <div className="col-span-2 lg:absolute lg:top-[330px] lg:left-[872px] lg:w-[460px]">
+              <DraggableItem id="habitStreak"><HabitStreakCard /></DraggableItem>
             </div>
           )}
           {widgets.photo !== false && (

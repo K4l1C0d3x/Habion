@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore, useEffect } from 'react'
 
-export type SettingsTab = 'appearance' | 'widgets' | 'sound' | 'about'
+export type SettingsTab = 'appearance' | 'wallpaper' | 'widgets' | 'sound' | 'about'
 
 export interface WidgetVisibility {
   clock: boolean
@@ -12,6 +12,7 @@ export interface WidgetVisibility {
   todo: boolean
   focus: boolean
   habit: boolean
+  habitStreak: boolean
   notes: boolean
   photo: boolean
   apps: boolean
@@ -37,6 +38,7 @@ const DEFAULT_WIDGETS: WidgetVisibility = {
   todo: true,
   focus: true,
   habit: true,
+  habitStreak: true,
   notes: true,
   photo: true,
   apps: true,

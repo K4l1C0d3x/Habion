@@ -36,15 +36,33 @@ function getInitialHistory(): Record<string, string[]> {
   const history: Record<string, string[]> = {}
   const now = new Date()
 
-  // Seed past 3 days with all habits done for a live realistic streak
-  for (let i = 3; i >= 1; i--) {
+  // Generate realistic GitHub/activity-style heatmap distribution across past 140 days
+  // Pattern closely matching the user's uploaded habit streak reference
+  for (let i = 140; i >= 1; i--) {
     const past = new Date(now)
     past.setDate(past.getDate() - i)
-    history[toDateKey(past)] = ['read', 'exercise', 'meditate']
+    const key = toDateKey(past)
+    
+    // Pseudo-random pseudo-structured completion pattern
+    const dayOfWeek = past.getDay()
+    const cycle = (i * 7 + dayOfWeek * 13) % 100
+    
+    if (i <= 4) {
+      // Current active streak (last 4 days 100% completed)
+      history[key] = ['read', 'exercise', 'meditate']
+    } else if (cycle > 70) {
+      history[key] = ['read', 'exercise', 'meditate'] // 100% complete (bright green)
+    } else if (cycle > 45) {
+      history[key] = ['read', 'exercise'] // 66% complete (medium green)
+    } else if (cycle > 25) {
+      history[key] = ['read'] // 33% complete (subtle dark green)
+    } else {
+      history[key] = [] // 0% (empty dark cell)
+    }
   }
 
-  // Today seeded with 1 habit done
-  history[toDateKey(now)] = ['read']
+  // Today seeded with 2 habits done
+  history[toDateKey(now)] = ['read', 'exercise']
   return history
 }
 
@@ -78,7 +96,7 @@ export function calculateStreak(
 }
 
 const HABITS_KEY = 'desktop_habits_list_v2'
-const HISTORY_KEY = 'habit-history-v2'
+const HISTORY_KEY = 'habit-history-v3'
 
 let state: HabitState = {
   habits: DEFAULT_HABITS,

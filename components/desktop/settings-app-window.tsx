@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Settings,
   Palette,
+  Wallpaper,
   LayoutGrid,
   Volume2,
   Info,
@@ -15,8 +16,13 @@ import {
   Check,
   Bookmark,
   History,
+  Upload,
+  Trash2,
+  Image as ImageIcon,
+  Sliders,
 } from 'lucide-react'
 import { useSettingsStore, settingsStore, type SettingsTab, type WidgetVisibility } from '@/lib/settings-store'
+import { useWallpaperStore, wallpaperStore, PRESET_WALLPAPERS, processWallpaperFile, type WallpaperFit } from '@/lib/wallpaper-store'
 import { useTheme, themeManager } from '@/lib/theme'
 import { useFocusStore, focusStore, playFocusChime } from '@/lib/focus-store'
 
@@ -28,6 +34,7 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
   { id: 'appearance', label: 'Appearance', icon: Palette },
+  { id: 'wallpaper', label: 'Wallpaper', icon: Wallpaper },
   { id: 'widgets', label: 'Widgets & Desktop', icon: LayoutGrid },
   { id: 'sound', label: 'Sound & Focus', icon: Volume2 },
   { id: 'about', label: 'About KalidasOS', icon: Info },
@@ -41,6 +48,7 @@ const WIDGET_LABELS: { key: keyof WidgetVisibility; label: string; desc: string 
   { key: 'todo', label: 'Reminders & Tasks', desc: 'Task checklist connected to Reminders app' },
   { key: 'focus', label: 'Focus & Pomodoro', desc: 'Timer with 4-cycle Pomodoro loop' },
   { key: 'habit', label: 'Habit Tracker', desc: 'Daily habits with streaks and week dots' },
+  { key: 'habitStreak', label: 'Habit Streak Card', desc: 'GitHub-style 140-day consistency heatmap card' },
   { key: 'photo', label: 'Photo & Framing', desc: 'Interactive photo album with crop studio' },
   { key: 'notes', label: 'Sticky Notes', desc: 'Persistent scratchpad note' },
   { key: 'apps', label: 'Daily Apps Grid', desc: 'Curated 10-tool daily stack' },
@@ -50,9 +58,29 @@ export function SettingsAppWindow() {
   const { isAppOpen, activeTab, widgets, widgetPositions, savedStage, savedStageDate } = useSettingsStore()
   const theme = useTheme()
   const { soundEnabled, durations } = useFocusStore()
+  const { currentWallpaperId, customWallpaperData, customWallpaperName, blur, dim, fit } = useWallpaperStore()
   const [isMaximized, setIsMaximized] = useState(false)
   const [saveNotice, setSaveNotice] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const windowRef = useRef<HTMLDivElement>(null)
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsUploading(true)
+    setUploadError(null)
+    try {
+      const dataUrl = await processWallpaperFile(file)
+      wallpaperStore.setCustomWallpaper(dataUrl, file.name)
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : 'Failed to load wallpaper')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   // Escape key to close
   useEffect(() => {
@@ -234,6 +262,264 @@ export function SettingsAppWindow() {
                   <span className="text-[10px] font-semibold text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded-md">
                     System Default
                   </span>
+                </div>
+
+                {/* Quick Link to Wallpaper */}
+                <div className="rounded-2xl border border-border bg-muted/10 p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Wallpaper className="size-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold">Desktop Wallpaper</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {currentWallpaperId === 'custom'
+                          ? `Custom: ${customWallpaperName || 'Uploaded Image'}`
+                          : currentWallpaperId === 'default'
+                          ? 'Default Minimalist'
+                          : PRESET_WALLPAPERS.find((p) => p.id === currentWallpaperId)?.name || 'Preset'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => settingsStore.setActiveTab('wallpaper')}
+                    className="rounded-xl bg-foreground text-background px-3 py-1.5 text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                  >
+                    Change Wallpaper
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 2. WALLPAPER TAB */}
+            {activeTab === 'wallpaper' && (
+              <div className="flex flex-col gap-6 animate-in fade-in duration-150">
+                <div>
+                  <h2 className="text-lg font-bold">Desktop Wallpaper</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Upload your own photo or choose from curated macOS-style gradient presets.
+                  </p>
+                </div>
+
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/avif"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+
+                {/* Custom Wallpaper Upload Card */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                      Custom Upload
+                    </span>
+                    {customWallpaperData && (
+                      <span className="text-[10px] font-medium text-signal">
+                        Active Upload
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-muted/20 p-4 flex flex-col gap-4">
+                    {customWallpaperData ? (
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-border shadow-xs bg-muted/50"
+                          style={{
+                            backgroundImage: `url(${customWallpaperData})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate">
+                            {customWallpaperName || 'Custom Uploaded Photo'}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {currentWallpaperId === 'custom' ? 'Currently applied on your desktop' : 'Saved in browser memory'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2.5">
+                            {currentWallpaperId !== 'custom' && (
+                              <button
+                                type="button"
+                                onClick={() => wallpaperStore.setPreset('custom')}
+                                className="rounded-lg bg-foreground text-background px-2.5 py-1 text-[11px] font-semibold hover:opacity-90 transition-all cursor-pointer"
+                              >
+                                Apply
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-semibold hover:bg-muted transition-all cursor-pointer inline-flex items-center gap-1.5"
+                            >
+                              <Upload className="size-3" />
+                              Replace
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => wallpaperStore.removeCustomWallpaper()}
+                              className="rounded-lg border border-destructive/20 text-destructive bg-destructive/5 hover:bg-destructive/15 px-2 py-1 text-[11px] font-semibold transition-all cursor-pointer inline-flex items-center gap-1"
+                              title="Delete uploaded wallpaper"
+                            >
+                              <Trash2 className="size-3" />
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="group flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-border p-6 hover:border-signal/50 hover:bg-muted/40 transition-all cursor-pointer text-center"
+                      >
+                        <div className="flex size-11 items-center justify-center rounded-full bg-muted group-hover:bg-signal/10 group-hover:text-signal transition-colors text-muted-foreground">
+                          <Upload className="size-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold">
+                            {isUploading ? 'Compressing & uploading...' : 'Upload Wallpaper from Computer'}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            JPG, PNG, WebP up to high resolution. Automatically optimized for your display.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {uploadError && (
+                      <p className="text-xs text-destructive font-medium bg-destructive/10 p-2 rounded-lg">
+                        {uploadError}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Preset Wallpapers Grid */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                      macOS Curated Presets
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => wallpaperStore.setPreset('default')}
+                      className="text-[11px] text-muted-foreground hover:text-foreground font-medium underline underline-offset-2 transition-colors cursor-pointer"
+                    >
+                      Reset to Default
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {PRESET_WALLPAPERS.map((preset) => {
+                      const isSelected = currentWallpaperId === preset.id
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => wallpaperStore.setPreset(preset.id)}
+                          className={`group relative flex flex-col overflow-hidden rounded-xl border text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-signal ring-2 ring-signal/30 shadow-xs'
+                              : 'border-border hover:border-border/80 hover:shadow-xs'
+                          }`}
+                        >
+                          <div
+                            className="h-16 w-full relative transition-transform duration-300 group-hover:scale-105"
+                            style={{
+                              background: preset.value || 'var(--card)',
+                            }}
+                          >
+                            {preset.id === 'default' && (
+                              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/60 text-[10px] font-medium bg-muted/20">
+                                Clean System
+                              </div>
+                            )}
+                            {isSelected && (
+                              <div className="absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full bg-signal text-white shadow-xs">
+                                <Check className="size-3 stroke-[3]" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-2 bg-card">
+                            <p className="text-[11px] font-bold truncate">{preset.name}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Wallpaper Customization Controls (Blur & Dim) */}
+                <div className="flex flex-col gap-3 rounded-2xl border border-border bg-muted/20 p-4">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="size-3.5 text-muted-foreground" />
+                    <span className="text-xs font-bold">Display & Backdrop Effects</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                    {/* Background Fit */}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-muted-foreground">Scaling Fit</span>
+                        <span className="font-semibold uppercase text-[10px]">{fit}</span>
+                      </div>
+                      <div className="flex gap-1 bg-muted p-0.5 rounded-lg border border-border">
+                        {(['cover', 'contain'] as WallpaperFit[]).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => wallpaperStore.setFit(mode)}
+                            className={`flex-1 text-[10px] font-semibold capitalize py-1 rounded-md transition-all cursor-pointer ${
+                              fit === mode
+                                ? 'bg-card text-foreground shadow-xs'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            {mode}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Blur Slider */}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-muted-foreground">Backdrop Blur</span>
+                        <span className="font-semibold">{blur}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="24"
+                        step="2"
+                        value={blur}
+                        onChange={(e) => wallpaperStore.setBlur(Number(e.target.value))}
+                        className="w-full accent-signal cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Dim Overlay Slider */}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-muted-foreground">Vignette Dim</span>
+                        <span className="font-semibold">{dim}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="70"
+                        step="5"
+                        value={dim}
+                        onChange={(e) => wallpaperStore.setDim(Number(e.target.value))}
+                        className="w-full accent-signal cursor-pointer"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
