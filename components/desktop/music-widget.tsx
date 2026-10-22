@@ -182,7 +182,7 @@ export function MusicWidget() {
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-1.5 font-medium">
           {isLiveSpotify ? (
-            <span className="flex items-center gap-1.5 text-emerald-500 font-semibold text-[11px] tracking-wide">
+            <span className="flex items-center gap-1.5 text-emerald-500 font-semibold text-[11px] tracking-wide pointer-events-none">
               <span className="relative flex size-2">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
@@ -191,21 +191,15 @@ export function MusicWidget() {
               LIVE ON SPOTIFY
             </span>
           ) : spotifyData?.configured ? (
-            <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+            <span className="flex items-center gap-1.5 text-muted-foreground text-[11px] pointer-events-none">
               <SpotifyIcon className="size-3.5 fill-muted-foreground" />
               Spotify Idle
             </span>
           ) : (
-            <a
-              href="/api/spotify/login"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-emerald-500 transition-colors"
-              title="Click to connect your Spotify account"
-            >
-              <SpotifyIcon className="size-3 fill-current" />
-              Connect Spotify
-            </a>
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground pointer-events-none">
+              <SpotifyIcon className="size-3.5 fill-muted-foreground" />
+              Spotify
+            </span>
           )}
         </div>
 
@@ -214,7 +208,7 @@ export function MusicWidget() {
             href={spotifyData.songUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             title="Open track on Spotify"
           >
             <span>Open</span>

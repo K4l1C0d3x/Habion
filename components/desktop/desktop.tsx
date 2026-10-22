@@ -20,7 +20,7 @@ export function Desktop() {
 
   return (
     <section id="top" aria-label="Desktop workspace" className="px-3 pt-6 pb-8 lg:p-0">
-      <div key={resetLayoutKey} className="relative flex flex-col gap-8 lg:block lg:h-[calc(100svh-2.25rem)] lg:overflow-hidden">
+      <div key={resetLayoutKey} className="relative flex flex-col gap-8 lg:block lg:h-[calc(100svh-2.25rem)]">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:contents">
           {widgets.clock && (
             <div className="lg:absolute lg:top-20 lg:left-3 lg:w-[188px]">

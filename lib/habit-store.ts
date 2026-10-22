@@ -200,16 +200,31 @@ export const habitStore = {
   addHabit: (name: string, icon: string = '✨', category: HabitCategory = 'productivity') => {
     const trimmed = name.trim()
     if (!trimmed) return
+    const newHabitId = `habit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
     const newHabit: Habit = {
-      id: `habit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: newHabitId,
       name: trimmed,
       icon: icon || '✨',
       category,
       createdAt: Date.now(),
     }
+
+    // Automatically backfill history for existing completed days
+    // so user's existing historical streak and 100% glow are preserved
+    const updatedHistory: Record<string, string[]> = { ...state.history }
+    for (const [dateKey, completedList] of Object.entries(updatedHistory)) {
+      if (completedList.length > 0 && completedList.length >= state.habits.length) {
+        // If that day was 100% completed under the old habit count, mark the new habit done too
+        if (!completedList.includes(newHabitId)) {
+          updatedHistory[dateKey] = [...completedList, newHabitId]
+        }
+      }
+    }
+
     state = {
       ...state,
       habits: [...state.habits, newHabit],
+      history: updatedHistory,
     }
     emitChange()
     persistState()

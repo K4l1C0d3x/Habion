@@ -54,7 +54,7 @@ export function DraggableItem({
 
     const PADDING_X = 8
     const PADDING_TOP = 40 // Keep below the top menu bar (36px)
-    const PADDING_BOTTOM = 76 // Keep above the bottom dock
+    const PADDING_BOTTOM = 8 // Allow dragging all the way to the screen bottom edge (beside the dock)
 
     const minX = PADDING_X
     const maxX = window.innerWidth - PADDING_X
