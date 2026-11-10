@@ -4,6 +4,8 @@ import type { PointerEvent, ReactNode } from 'react'
 import { useRef, useState, useEffect } from 'react'
 import { useSettingsStore, settingsStore } from '@/lib/settings-store'
 
+let topZIndex = 20
+
 export function DraggableItem({
   children,
   className = '',
@@ -16,6 +18,7 @@ export function DraggableItem({
   const { widgetPositions, resetLayoutKey } = useSettingsStore()
   const initialOffset = (id && widgetPositions[id]) ? widgetPositions[id] : { x: 0, y: 0 }
   const [offset, setOffset] = useState(initialOffset)
+  const [zIndex, setZIndex] = useState(10)
   const offsetRef = useRef(initialOffset)
 
   // Synchronize when resetLayoutKey changes or saved stage is restored
@@ -101,12 +104,19 @@ export function DraggableItem({
 
   return (
     <div
-      className={`touch-none cursor-grab active:cursor-grabbing ${className}`}
+      className={`relative touch-none cursor-grab active:cursor-grabbing ${className}`}
+      onPointerDownCapture={() => {
+        topZIndex += 1
+        setZIndex(topZIndex)
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0)` }}
+      style={{
+        transform: `translate3d(${offset.x}px, ${offset.y}px, 0)`,
+        zIndex,
+      }}
     >
       {children}
     </div>

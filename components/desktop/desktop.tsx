@@ -23,66 +23,66 @@ export function Desktop() {
       <div key={resetLayoutKey} className="relative flex flex-col gap-8 lg:block lg:h-[calc(100svh-2.25rem)]">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:contents">
           {widgets.clock && (
-            <div className="lg:absolute lg:top-20 lg:left-3 lg:w-[188px]">
+            <div className="lg:absolute lg:top-6 lg:left-3 lg:w-[188px]">
               <DraggableItem id="clock"><ClockWidget /></DraggableItem>
             </div>
           )}
           {widgets.calendar && (
-            <div className="lg:absolute lg:top-20 lg:left-[224px] lg:w-[188px]">
+            <div className="lg:absolute lg:top-6 lg:left-[220px] lg:w-[188px]">
               <DraggableItem id="calendar"><CalendarWidget /></DraggableItem>
             </div>
           )}
           {widgets.music && (
-            <div className="col-span-2 lg:absolute lg:top-16 lg:left-[450px] lg:w-[400px]">
+            <div className="col-span-2 lg:absolute lg:top-6 lg:left-[432px] lg:w-[400px]">
               <DraggableItem id="music"><MusicWidget /></DraggableItem>
             </div>
           )}
           {widgets.weather && (
-            <div className="col-span-2 lg:absolute lg:top-[330px] lg:left-3 lg:w-[320px]">
+            <div className="col-span-2 lg:absolute lg:top-[248px] lg:left-3 lg:w-[320px]">
               <DraggableItem id="weather"><WeatherWidget /></DraggableItem>
             </div>
           )}
           {widgets.focus && (
-            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[330px] lg:left-[420px] lg:w-[200px]">
+            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[248px] lg:left-[416px] lg:w-[200px]">
               <DraggableItem id="focus"><PomodoroWidget /></DraggableItem>
             </div>
           )}
           {widgets.habit && (
-            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[330px] lg:left-[636px] lg:w-[220px]">
+            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[248px] lg:left-[632px] lg:w-[220px]">
               <DraggableItem id="habit"><HabitWidget /></DraggableItem>
             </div>
           )}
           {widgets.habitStreak !== false && (
-            <div className="col-span-2 lg:absolute lg:top-[330px] lg:left-[872px] lg:w-[460px]">
+            <div className="col-span-2 lg:absolute lg:top-[248px] lg:left-[868px] lg:w-[450px]">
               <DraggableItem id="habitStreak"><HabitStreakCard /></DraggableItem>
             </div>
           )}
           {widgets.photo !== false && (
-            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[506px] lg:left-3 lg:w-[186px]">
+            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[400px] lg:left-3 lg:w-[186px]">
               <DraggableItem id="photo">
                 <PhotoWidget />
               </DraggableItem>
             </div>
           )}
           {widgets.todo && (
-            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[506px] lg:left-[220px] lg:w-[220px]">
+            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[400px] lg:left-[212px] lg:w-[196px]">
               <DraggableItem id="todo"><TodoWidget /></DraggableItem>
             </div>
           )}
           {widgets.notes && (
-            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[506px] lg:left-[450px] lg:w-[240px]">
+            <div className="col-span-2 sm:col-span-1 lg:absolute lg:top-[484px] lg:left-[416px] lg:w-[216px]">
               <DraggableItem id="notes"><NotesWidget /></DraggableItem>
             </div>
           )}
         </div>
 
         {widgets.apps && (
-          <div className="flex justify-center lg:absolute lg:top-[515px] lg:left-[706px]">
+          <div className="flex justify-center lg:absolute lg:top-[516px] lg:left-[648px]">
             <DraggableItem id="apps"><AppGrid /></DraggableItem>
           </div>
         )}
 
-        <div className="lg:absolute lg:top-20 lg:right-10">
+        <div className="lg:absolute lg:top-6 lg:right-10">
           <DesktopFolders />
         </div>
       </div>

@@ -64,6 +64,19 @@ export function playFocusChime() {
   }
 }
 
+function normalizeDurations(raw: unknown): FocusDurations {
+  const obj = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  const toPositive = (val: unknown, fallback: number) => {
+    const n = Number(val)
+    return Number.isFinite(n) && n > 0 ? n : fallback
+  }
+  return {
+    focus: toPositive(obj.focus, DEFAULT_DURATIONS.focus),
+    shortBreak: toPositive(obj.shortBreak, DEFAULT_DURATIONS.shortBreak),
+    longBreak: toPositive(obj.longBreak, DEFAULT_DURATIONS.longBreak),
+  }
+}
+
 function loadInitialState(): Partial<FocusState> {
   if (typeof window === 'undefined') return {}
   try {
@@ -72,11 +85,14 @@ function loadInitialState(): Partial<FocusState> {
     const savedCycles = localStorage.getItem('focus_cycles')
     const savedMinutes = localStorage.getItem('focus_minutes')
 
+    const parsedCycles = Number(savedCycles)
+    const parsedMinutes = Number(savedMinutes)
+
     return {
-      durations: savedDurations ? JSON.parse(savedDurations) : DEFAULT_DURATIONS,
+      durations: savedDurations ? normalizeDurations(JSON.parse(savedDurations)) : DEFAULT_DURATIONS,
       soundEnabled: savedSound !== null ? savedSound === 'true' : true,
-      completedCycles: savedCycles ? Number(savedCycles) : 0,
-      totalFocusedMinutes: savedMinutes ? Number(savedMinutes) : 0,
+      completedCycles: Number.isFinite(parsedCycles) && parsedCycles >= 0 ? parsedCycles : 0,
+      totalFocusedMinutes: Number.isFinite(parsedMinutes) && parsedMinutes >= 0 ? parsedMinutes : 0,
     }
   } catch {
     return {}
@@ -101,10 +117,13 @@ function initFocusClient() {
   isFocusInitialized = true
   const saved = loadInitialState()
   if (Object.keys(saved).length > 0) {
+    const durations = saved.durations ?? state.durations
+    const modeSecs = durations[state.mode] * 60
     state = {
       ...state,
       ...saved,
-      seconds: saved.durations && !state.running ? saved.durations.focus * 60 : state.seconds,
+      durations,
+      seconds: !state.running && Number.isFinite(modeSecs) && modeSecs > 0 ? modeSecs : state.seconds,
     }
     emitChange()
   }
@@ -179,7 +198,7 @@ function tick() {
       }
     }
     emitChange()
-  } else {
+  } else if (remaining !== state.seconds) {
     state = { ...state, seconds: remaining }
     emitChange()
   }
@@ -205,23 +224,24 @@ export const focusStore = {
   },
   start: () => {
     if (state.running) return
-    const secs = state.seconds > 0 ? state.seconds : state.durations[state.mode] * 60
+    const fallbackSecs = (state.durations[state.mode] || DEFAULT_DURATIONS[state.mode]) * 60
+    const secs = Number.isFinite(state.seconds) && state.seconds > 0 ? state.seconds : fallbackSecs
     endTime = Date.now() + secs * 1000
     state = { ...state, running: true, seconds: secs }
     emitChange()
     if (timerInterval) clearInterval(timerInterval)
-    timerInterval = setInterval(tick, 500)
+    timerInterval = setInterval(tick, 250)
   },
   pause: () => {
     if (!state.running) return
-    if (endTime) {
-      state.seconds = Math.max(0, Math.round((endTime - Date.now()) / 1000))
-    }
+    const remaining = endTime
+      ? Math.max(0, Math.round((endTime - Date.now()) / 1000))
+      : state.seconds
     if (timerInterval) clearInterval(timerInterval)
     timerInterval = null
     endTime = null
     restoreTitle()
-    state = { ...state, running: false }
+    state = { ...state, running: false, seconds: remaining }
     emitChange()
   },
   toggleStartPause: () => {

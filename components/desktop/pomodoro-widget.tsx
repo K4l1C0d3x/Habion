@@ -62,7 +62,7 @@ export function PomodoroWidget() {
       {/* Circular Timer Ring */}
       <div className="flex flex-col items-center py-0.5">
         <div className="relative flex size-28 items-center justify-center">
-          <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
+          <svg className="pointer-events-none absolute inset-0 -rotate-90" viewBox="0 0 100 100">
             <circle
               cx="50"
               cy="50"
@@ -97,10 +97,14 @@ export function PomodoroWidget() {
       </div>
 
       {/* Control Buttons */}
-      <div className="flex items-center justify-center gap-2 pt-0.5">
+      <div className="relative z-10 flex items-center justify-center gap-2 pt-0.5">
         <button
           type="button"
-          onClick={() => focusStore.toggleStartPause()}
+          data-no-drag
+          onClick={(e) => {
+            e.stopPropagation()
+            focusStore.toggleStartPause()
+          }}
           onPointerDown={(e) => e.stopPropagation()}
           className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-bold transition-all shadow-xs cursor-pointer ${
             running
@@ -123,7 +127,11 @@ export function PomodoroWidget() {
 
         <button
           type="button"
-          onClick={() => focusStore.reset()}
+          data-no-drag
+          onClick={(e) => {
+            e.stopPropagation()
+            focusStore.reset()
+          }}
           onPointerDown={(e) => e.stopPropagation()}
           title="Reset timer"
           className="flex size-8 items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground active:scale-95 transition-all cursor-pointer"

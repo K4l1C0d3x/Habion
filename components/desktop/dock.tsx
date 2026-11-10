@@ -22,8 +22,8 @@ export function Dock() {
   const dayNumber = now.getDate()
 
   return (
-    <nav aria-label="Dock" className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 select-none">
-      <ul className="widget flex items-center gap-2 rounded-2xl bg-card/85 p-2 backdrop-blur-xl border border-black/5 shadow-[0_12px_32px_-8px_rgb(0_0_0/0.15)]">
+    <nav aria-label="Dock" className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 select-none">
+      <ul className="widget pointer-events-auto flex items-center gap-2 rounded-2xl bg-card/85 p-2 backdrop-blur-xl border border-black/5 shadow-[0_12px_32px_-8px_rgb(0_0_0/0.15)]">
         {/* Finder / Kalidas Monogram */}
         <li>
           <a

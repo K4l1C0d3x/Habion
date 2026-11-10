@@ -105,28 +105,28 @@ export function HabitStreakCard() {
    * Level 3 (67%-99%): bright vivid mint
    * Level 4 (100%): maximum neon glow green (#00e575)
    */
-  const getCellColorClass = (ratio: number, isFuture: boolean, isToday: boolean) => {
+  const getCellColorClass = (ratio: number, isFuture: boolean) => {
     if (isFuture) {
-      return 'bg-[#181b1d]/40 border border-white/[0.03]'
+      return 'bg-muted/40 border border-black/[0.03] dark:bg-[#181b1d]/40 dark:border-white/[0.03]'
     }
     if (ratio === 0) {
-      return 'bg-[#181b1d] hover:bg-[#25282a] border border-white/[0.04]'
+      return 'bg-muted/80 hover:bg-muted border border-black/[0.05] dark:bg-[#181b1d] dark:hover:bg-[#25282a] dark:border-white/[0.04]'
     }
     if (ratio <= 0.34) {
-      return 'bg-[#064e3b] text-emerald-200 border border-[#065f46]'
+      return 'bg-emerald-200 border border-emerald-300/60 dark:bg-[#064e3b] dark:border-[#065f46]'
     }
     if (ratio <= 0.67) {
-      return 'bg-[#059669] text-white shadow-[0_0_8px_rgba(5,150,105,0.4)]'
+      return 'bg-emerald-400 border border-emerald-500/40 dark:bg-[#059669] dark:border-transparent dark:shadow-[0_0_8px_rgba(5,150,105,0.4)]'
     }
     if (ratio < 1) {
-      return 'bg-[#10b981] text-white shadow-[0_0_10px_rgba(16,185,129,0.55)]'
+      return 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.25)] dark:bg-[#10b981] dark:shadow-[0_0_10px_rgba(16,185,129,0.55)]'
     }
     // 100% complete
-    return 'bg-[#00e575] text-black shadow-[0_0_12px_rgba(0,229,117,0.7)]'
+    return 'bg-[#00d46a] shadow-[0_0_8px_rgba(0,212,106,0.45)] dark:bg-[#00e575] dark:shadow-[0_0_12px_rgba(0,229,117,0.7)]'
   }
 
   return (
-    <div className="widget group/streak flex w-full flex-col justify-between gap-3 rounded-2xl bg-[#0e1011]/95 text-white p-4 shadow-[0_16px_36px_-10px_rgb(0_0_0/0.45)] border border-white/10 backdrop-blur-xl select-none transition-all duration-300">
+    <div className="widget group/streak flex w-full flex-col justify-between gap-3 rounded-3xl bg-card/95 dark:bg-[#0e1011]/95 text-card-foreground dark:text-white p-4 border border-black/5 dark:border-white/10 dark:shadow-[0_16px_36px_-10px_rgb(0_0_0/0.45)] backdrop-blur-xl select-none transition-all duration-300">
       {/* Top Header */}
       <div className="flex items-center justify-between">
         <div
@@ -134,21 +134,21 @@ export function HabitStreakCard() {
           className="flex items-center gap-2.5 cursor-pointer"
           title="Open Habits Studio"
         >
-          <div className="flex size-7.5 items-center justify-center rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-[#00e575]">
-            <Flame className="size-4 fill-[#00e575]" />
+          <div className="flex size-7.5 items-center justify-center rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25 dark:border-emerald-500/30 text-emerald-600 dark:text-[#00e575]">
+            <Flame className="size-4 fill-emerald-500 dark:fill-[#00e575]" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-neutral-100 tracking-tight">
+              <span className="text-xs font-bold text-foreground dark:text-neutral-100 tracking-tight">
                 Habit Streak Grid
               </span>
-              <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.2 text-[10px] font-bold text-[#00e575]">
+              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25 dark:border-emerald-500/30 px-2 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-[#00e575]">
                 {streak} days
               </span>
             </div>
-            <p className="text-[10px] text-neutral-400">
+            <p className="text-[10px] text-muted-foreground dark:text-neutral-400">
               {hoveredCell ? (
-                <span className="text-emerald-400 font-medium">
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                   {hoveredCell.dateStr} • {hoveredCell.count}/{hoveredCell.total} habits ({hoveredCell.percent}%)
                 </span>
               ) : (
@@ -164,7 +164,7 @@ export function HabitStreakCard() {
           onClick={() => habitStore.openApp()}
           onPointerDown={(e) => e.stopPropagation()}
           title="Open Habits Studio"
-          className="flex size-6 items-center justify-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 opacity-0 group-hover/streak:opacity-100 transition-opacity cursor-pointer shrink-0"
+          className="flex size-6 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted dark:text-neutral-400 dark:hover:text-white dark:hover:bg-white/10 opacity-0 group-hover/streak:opacity-100 transition-opacity cursor-pointer shrink-0"
         >
           <ArrowUpRight className="size-3.5" />
         </button>
@@ -175,7 +175,7 @@ export function HabitStreakCard() {
         <div className="grid grid-flow-col grid-rows-7 gap-1.5 w-full">
           {columns.map((col, colIdx) =>
             col.map((cell, rowIdx) => {
-              const cellClasses = getCellColorClass(cell.ratio, cell.isFuture, cell.isToday)
+              const cellClasses = getCellColorClass(cell.ratio, cell.isFuture)
               const percent = Math.round(cell.ratio * 100)
               const formattedDate = cell.date.toLocaleDateString('en-US', {
                 month: 'short',
@@ -197,7 +197,9 @@ export function HabitStreakCard() {
                   }}
                   onMouseLeave={() => setHoveredCell(null)}
                   className={`aspect-square w-full rounded-[3.5px] transition-all duration-200 cursor-pointer ${cellClasses} ${
-                    cell.isToday ? 'ring-1.5 ring-white ring-offset-1 ring-offset-[#0e1011]' : ''
+                    cell.isToday
+                      ? 'ring-1.5 ring-foreground ring-offset-1 ring-offset-card dark:ring-white dark:ring-offset-[#0e1011]'
+                      : ''
                   } hover:scale-125 hover:z-10`}
                 />
               )
@@ -207,19 +209,19 @@ export function HabitStreakCard() {
       </div>
 
       {/* Legend Footer */}
-      <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[10px] text-neutral-400">
+      <div className="flex items-center justify-between pt-1 border-t border-border/60 dark:border-white/5 text-[10px] text-muted-foreground dark:text-neutral-400">
         <span className="flex items-center gap-1 font-medium">
-          <Sparkles className="size-3 text-[#00e575]" />
+          <Sparkles className="size-3 text-emerald-600 dark:text-[#00e575]" />
           Consistency Matrix
         </span>
         <div className="flex items-center gap-1.5">
-          <span className="text-[9px] text-neutral-500">Less</span>
-          <div className="size-2.5 rounded-[3px] bg-[#181b1d] border border-white/5" />
-          <div className="size-2.5 rounded-[3px] bg-[#064e3b]" />
-          <div className="size-2.5 rounded-[3px] bg-[#059669]" />
-          <div className="size-2.5 rounded-[3px] bg-[#10b981]" />
-          <div className="size-2.5 rounded-[3px] bg-[#00e575] shadow-[0_0_6px_rgba(0,229,117,0.8)]" />
-          <span className="text-[9px] text-neutral-500">100%</span>
+          <span className="text-[9px] text-muted-foreground/80 dark:text-neutral-500">Less</span>
+          <div className="size-2.5 rounded-[3px] bg-muted/80 border border-black/[0.05] dark:bg-[#181b1d] dark:border-white/5" />
+          <div className="size-2.5 rounded-[3px] bg-emerald-200 dark:bg-[#064e3b]" />
+          <div className="size-2.5 rounded-[3px] bg-emerald-400 dark:bg-[#059669]" />
+          <div className="size-2.5 rounded-[3px] bg-emerald-500 dark:bg-[#10b981]" />
+          <div className="size-2.5 rounded-[3px] bg-[#00d46a] shadow-[0_0_4px_rgba(0,212,106,0.45)] dark:bg-[#00e575] dark:shadow-[0_0_6px_rgba(0,229,117,0.8)]" />
+          <span className="text-[9px] text-muted-foreground/80 dark:text-neutral-500">100%</span>
         </div>
       </div>
     </div>
